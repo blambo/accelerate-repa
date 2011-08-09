@@ -1,0 +1,19 @@
+Name:             accelerate-repa
+Version:          0.0
+Cabal-version:    >= 1.6
+Tested-with:      GHC == 7.0.2
+Build-type:       Simple
+
+Synopsis:         A back-end for the Accelerate library using the Repa library
+Description:      A back-end for the Accelerate library using the Repa library
+Author:           Benjamin Lambert-Smith
+Maintainer:       Benjamin Lambert-Smith <blambo+github@gmail.com>
+Homepage:         https://github.com/blambo/accelerate-repa
+Bug-reports:      https://github.com/blambo/accelerate-repa/issues
+
+Category:         Compilers/Interpreters, Concurrency, Data
+Stability:        Experimental
+
+Library
+   Build-depends: repa == 2.*,
+                  accelerate == 0.9.*
