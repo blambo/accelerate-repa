@@ -1,0 +1,13 @@
+Description of the different AST node types
+
+---
+Let
+---
+
+Takes two expressions (acc1 and acc2), evaluates acc1 and uses the binds the result with the environment for use with acc2
+
+----
+Let2
+----
+
+Similar to Let, however it is used when the result of acc1 is a pair of arrays? Not really sure about this one
