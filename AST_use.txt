@@ -10,4 +10,169 @@ Takes two expressions (acc1 and acc2), evaluates acc1 and uses the binds the res
 Let2
 ----
 
-Similar to Let, however it is used when the result of acc1 is a pair of arrays? Not really sure about this one
+Similar to Let, however it is used when the result of acc1 is a pair of arrays? Not really sure about this one.
+
+----------
+PairArrays
+----------
+
+No idea
+
+----
+Avar
+----
+
+Represents a variable bound by a Let
+
+-----
+Apply
+-----
+
+Closed function application
+
+-----
+Acond
+-----
+
+Array-level if-then-else conditional
+
+---
+Use
+---
+
+Marks where an array is to be used
+
+----
+Unit
+----
+
+Similar to use, but grabs a scalar and puts it into a singleton array
+
+-------
+Reshape
+-------
+
+Changes the shape of the array it is applied to, but not the length of the
+dimensions (I think)
+
+--------
+Generate
+--------
+
+Constructs a new array by applying function to each index
+
+---------
+Replicate
+---------
+
+Replicates an array across one or more dimensions
+
+-----
+Index
+-----
+
+Grabs a subarray of an array. If a dimension is not indexed it is returned whole.
+
+---
+Map
+---
+
+Applies a unary function to all elements in the array. Basically exactly the same as Repa's map
+
+-------
+ZipWith
+-------
+
+Uses given binary function pairwise to the elements of the two given arrays. The length of the resulting array is the lesser of the two original lengths.
+
+----
+Fold
+----
+
+Folds across INNERMOST dimension of an array with the given ASSOCIATIVE function. Also takes a default value.
+
+-----
+Fold1
+-----
+
+Same as Fold, but without default value. (Also, it is a one not the letter L next to Fold)
+
+-------
+FoldSeg
+-------
+
+A segmented fold. Still INNERMOST dimension and an ASSOCIATIVE function, and has a default value.
+
+--------
+Fold1Seg
+--------
+
+FoldSeg without a default value.
+
+-----
+Scanl
+-----
+
+Haskell-style scan of a LINEAR array with a given ASSOCIATIVE function and an initial element. The initial element does not need to be the neutral of the associative function.
+
+------
+Scanl'
+------
+
+Produces a rightmost fold value and an array with same length as input array.
+
+------
+Scanl1
+------
+
+Scanl without initial value
+
+-----
+Scanr
+-----
+
+Right-to-left version of Scanl
+
+------
+Scanr'
+------
+
+Right-to-left version of Scanl'
+
+------
+Scanr1
+------
+
+Right-to-left version of Scanl1
+
+-------
+Permute
+-------
+
+Generalised forward permutation. It is given a permutation function that determines for each element of the source array, where it should go in the target array. If a target array element is not assigned a value by the permutation function then it's value is determined by the default values array.
+
+It takes:
+ - Combination function (must be associative and commutative)
+ - Default values array
+ - Permutation function
+ - Source array
+
+Permutation function must be total. Input/Output arrays do not need to be the same shape.
+
+-----------
+Backpermute
+-----------
+
+Generalised multi-dimensional backwards permutation. Input and output array don't need to be same shape, but elements stay the same type. The permutation function must be total.
+
+-------
+Stencil
+-------
+
+Maps a stencil over an array.
+
+--------
+Stencil2
+--------
+
+Maps a binary stencil over an array
