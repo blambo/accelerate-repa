@@ -3,4 +3,4 @@ import Data.Array.Accelerate.Repa as Repa
 
 main :: IO ()
 main = do
-   Repa.run $ use $ fromList Z [3::Int]
+   Repa.run $ unit $ constant (3::Int)
