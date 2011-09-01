@@ -4,7 +4,8 @@
 --
 -- Maintainer : Ben Lambert-Smith <blambo+github@gmail.com>
 --
--- Defines evaluation of Accelerate collective array computations
+-- Defines evaluation of Accelerate collective array computations,
+--  borrowed in part from the Accelerate Interpreter module
 
 module Data.Array.Accelerate.Repa.Evaluations.Acc
    ( evalAcc
@@ -12,6 +13,8 @@ module Data.Array.Accelerate.Repa.Evaluations.Acc
    where
 
 import Data.Array.Accelerate.AST
+import Data.Array.Accelerate.Repa.Evaluations.Fun
+import Data.Array.Accelerate.Repa.Evaluations.Exp
 
 evalAcc :: Acc a -> IO ()
 evalAcc acc = evalOpenAcc acc Empty
@@ -71,9 +74,10 @@ evalPreOpenAcc (Use _arr) _aenv
       print "Use {"
       print "}"
 
-evalPreOpenAcc (Unit _e) _aenv
+evalPreOpenAcc (Unit e) aenv
  = do
       print "Unit {"
+      print $ evalExp e aenv
       print "}"
 
 evalPreOpenAcc (Reshape _e acc) aenv
@@ -99,9 +103,10 @@ evalPreOpenAcc (Index _sliceIndex acc _slix) aenv
       evalOpenAcc acc aenv
       print "}"
 
-evalPreOpenAcc (Map _f acc) aenv
+evalPreOpenAcc (Map f acc) aenv
  = do
       print "Map {"
+      --evalFun f aenv
       evalOpenAcc acc aenv
       print "}"
 
