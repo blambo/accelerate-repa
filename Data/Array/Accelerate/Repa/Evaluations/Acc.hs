@@ -13,196 +13,106 @@ module Data.Array.Accelerate.Repa.Evaluations.Acc
    where
 
 import Data.Array.Accelerate.AST
+import Data.Array.Accelerate.Array.Sugar as Sugar
+
 import Data.Array.Accelerate.Repa.Evaluations.Fun
 import Data.Array.Accelerate.Repa.Evaluations.Exp
 
-evalAcc :: Acc a -> IO ()
+evalAcc :: Acc a -> a
 evalAcc acc = evalOpenAcc acc Empty
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Val aenv -> IO ()
+evalOpenAcc :: OpenAcc aenv a -> Val aenv -> a
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> IO ()
+evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> a
 
-evalPreOpenAcc (Let acc1 acc2) aenv
- = do
-      print "Let {"
-      evalOpenAcc acc1 aenv
-      --evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (Let _acc1 _acc2) _aenv
+ = error "Let"
 
-evalPreOpenAcc (Let2 acc1 acc2) aenv
- = do
-      print "Let2 {"
-      evalOpenAcc acc1 aenv
-      --evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
+ = error "Let2"
 
-evalPreOpenAcc (PairArrays acc1 acc2) aenv
- = do
-      print "PairArrays {"
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (PairArrays _acc1 _acc2) _aenv
+ = error "PairArrays"
 
 evalPreOpenAcc (Avar _idx) _aenv
- = do
-      print "Avar {"
-      print "}"
+ = error "Avar"
 
-evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) aenv
- = do
-      print "Apply {"
-      evalOpenAcc acc aenv
-      --evalOpenAcc funAcc aenv
-      print "}"
+evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _aenv
+ = error "Apply"
 evalPreOpenAcc (Apply _afun _acc) _aenv
    = error "GHC pattern matching does not detect that this case is impossible"
 
-evalPreOpenAcc (Acond cond acc1 acc2) aenv
- = do
-      print "Acond {"
-      --evalOpenAcc cond aenv
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
+ = error "Acond"
 
 evalPreOpenAcc (Use _arr) _aenv
- = do
-      print "Use {"
-      print "}"
+ = error "Use"
 
 evalPreOpenAcc (Unit e) aenv
- = do
-      print "Unit {"
-      print $ evalExp e aenv
-      print "}"
+ = evalExp e aenv
+-- = error "Unit"
 
 evalPreOpenAcc (Reshape _e acc) aenv
- = do
-      print "Reshape {"
-      evalOpenAcc acc aenv
-      print "}"
+ = error "Reshape"
 
 evalPreOpenAcc (Generate _sh _f) _aenv
- = do
-      print "Generate {"
-      print "}"
+ = error "Generate"
 
-evalPreOpenAcc (Replicate _sliceIndex _slix acc) aenv
- = do
-      print "Replicate {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
+ = error "Replicate"
 
-evalPreOpenAcc (Index _sliceIndex acc _slix) aenv
- = do
-      print "Index {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Index _sliceIndex _acc _slix) _aenv
+ = error "Index"
 
-evalPreOpenAcc (Map f acc) aenv
- = do
-      print "Map {"
-      --evalFun f aenv
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Map _f _acc) _aenv
+ = error "Map"
 
-evalPreOpenAcc (ZipWith _f acc1 acc2) aenv
- = do
-      print "ZipWith {"
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (ZipWith _f _acc1 _acc2) _aenv
+ = error "ZipWith"
 
-evalPreOpenAcc (Fold _f _e acc) aenv
- = do
-      print "Fold {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Fold _f _e _acc) _aenv
+ = error "Fold"
 
-evalPreOpenAcc (Fold1 _f acc) aenv
- = do
-      print "Fold1 {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Fold1 _f _acc) _aenv
+ = error "Fold1"
 
-evalPreOpenAcc (FoldSeg _f _e acc1 acc2) aenv
- = do
-      print "FoldSeg {"
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _aenv
+ = error "FoldSeg"
 
-evalPreOpenAcc (Fold1Seg _f acc1 acc2) aenv
- = do
-      print "Fold1Seg {"
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _aenv
+ = error "Fold1Seg"
 
-evalPreOpenAcc (Scanl _f _e acc) aenv
- = do
-      print "Scanl {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanl _f _e _acc) _aenv
+ = error "Scanl"
 
-evalPreOpenAcc (Scanl' _f _e acc) aenv
- = do
-      print "Scanl' {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanl' _f _e _acc) _aenv
+ = error "Scanl'"
 
-evalPreOpenAcc (Scanl1 _f acc) aenv
- = do
-      print "Scanl1 {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanl1 _f _acc) _aenv
+ = error "Scanl1"
 
-evalPreOpenAcc (Scanr _f _e acc) aenv
- = do
-      print "Scanr {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanr _f _e _acc) _aenv
+ = error "Scanr"
 
-evalPreOpenAcc (Scanr' _f _e acc) aenv
- = do
-      print "Scanr' {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanr' _f _e _acc) _aenv
+ = error "Scanr'"
 
-evalPreOpenAcc (Scanr1 _f acc) aenv
- = do
-      print "Scanr1 {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Scanr1 _f _acc) _aenv
+ = error "Scanr1"
 
-evalPreOpenAcc (Permute _f dftAcc _p acc) aenv
- = do
-      print "Permute {"
-      evalOpenAcc dftAcc aenv
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Permute _f _dftAcc _p _acc) _aenv
+ = error "Permute"
 
-evalPreOpenAcc (Backpermute _e _p acc) aenv
- = do
-      print "Backpermute {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Backpermute _e _p _acc) _aenv
+ = error "Backpermute"
 
-evalPreOpenAcc (Stencil _sten _bndy acc) aenv
- = do
-      print "Stencil {"
-      evalOpenAcc acc aenv
-      print "}"
+evalPreOpenAcc (Stencil _sten _bndy _acc) _aenv
+ = error "Stencil"
 
-evalPreOpenAcc (Stencil2 _sten _bndy1 acc1 _bndy2 acc2) aenv
- = do
-      print "Stencil2 {"
-      evalOpenAcc acc1 aenv
-      evalOpenAcc acc2 aenv
-      print "}"
+evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _aenv
+ = error "Stencil2"
 
 evalPreOpenAcc _ _ = error "Not yet implemented"

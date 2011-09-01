@@ -23,7 +23,7 @@ evalOpenExp (Var idx) env _
    = error "Var"
 
 evalOpenExp (Const c) _ _
-   = error "Const"
+   = Sugar.toElt c
 
 evalOpenExp (Tuple tup) env aenv 
    = error "Tuple"
@@ -47,7 +47,9 @@ evalOpenExp (IndexAny) _ _
    = error "IndexAny"
 
 evalOpenExp (Cond c t e) env aenv 
-   = error "Cond"
+   = if   evalOpenExp c env aenv
+     then evalOpenExp t env aenv
+     else evalOpenExp e env aenv
 
 evalOpenExp (PrimConst c) _ _
    = error "PrimConst"
