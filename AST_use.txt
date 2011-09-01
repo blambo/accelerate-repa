@@ -39,8 +39,7 @@ Array-level if-then-else conditional
 ---
 Use
 ---
-
-Marks where an array is to be used
+Marks where an array is born.
 
 ----
 Unit
@@ -76,20 +75,49 @@ Grabs a subarray of an array. If a dimension is not indexed it is returned whole
 ---
 Map
 ---
-
 Applies a unary function to all elements in the array. Basically exactly the same as Repa's map
+
+Acc def:
+Map :: (Shape sh, Elt e, Elt e')
+    => PreFun     acc aenv (e -> e')
+    ->            acc aenv (Array sh e)
+    -> PreOpenAcc acc aenv (Array sh e')
+
+PreFun describes a parameterised function without free scalar variables
+type PreFun acc = PreOpenFun acc ()
+data PreOpenFun (acc :: * -> * -> *) env aenv t where
+   Body :: PreOpenExp acc env              aenv t
+        -> PreOpenExp acc env              aenv t
+   Lam  :: Elt a
+        => PreOpenFun acc (env, EltRepr a) aenv t
+        -> PreOpenFun acc env              aenv (a -> t)
+
+Use: map
+
+Need to extract the function to be applied from the AST (Body or Lam). Then apply it to the elements of the Array which is the second argument to Map.
 
 -------
 ZipWith
 -------
-
 Uses given binary function pairwise to the elements of the two given arrays. The length of the resulting array is the lesser of the two original lengths.
+
+Acc def:
+ZipWith :: (Shape sh, Elt e, Elt e')
+        => PreFun     acc aenv (e1 -> e2 -> e3)
+        ->            acc aenv (Array sh e1)
+        ->            acc aenv (Array sh e2)
+        -> PreOpenAcc acc aenv (Array sh e3)
+
+Use: zipWith
+
+Similar to Map, need to extract function from PreFun.
 
 ----
 Fold
 ----
-
 Folds across INNERMOST dimension of an array with the given ASSOCIATIVE function. Also takes a default value.
+
+
 
 -----
 Fold1
