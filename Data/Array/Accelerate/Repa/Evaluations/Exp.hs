@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP, GADTs, BangPatterns, TypeOperators, PatternGuards #-}
+{-# LANGUAGE TypeFamilies, ScopedTypeVariables, FlexibleContexts #-}
 -- |
 -- Module     : Data.Array.Accelerate.Repa.Evaluations.Exp
 --
@@ -68,5 +69,5 @@ evalOpenExp (Size acc) _ aenv
 
 -- Evaluate a closed expression
 --
-evalExp :: Exp aenv t -> Val aenv -> t
+evalExp :: PreExp OpenAcc aenv t -> Val aenv -> t
 evalExp e aenv = evalOpenExp e Empty aenv

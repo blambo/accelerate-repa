@@ -1,4 +1,5 @@
-{-# LANGUAGE GADTs #-}
+{-# LANGUAGE CPP, GADTs, BangPatterns, TypeOperators, PatternGuards #-}
+{-# LANGUAGE TypeFamilies, ScopedTypeVariables, FlexibleContexts #-}
 -- |
 -- Module     : Data.Array.Accelerate.Repa.Evaluations.Acc
 --
