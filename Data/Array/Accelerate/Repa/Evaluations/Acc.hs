@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP, GADTs, BangPatterns, TypeOperators, PatternGuards #-}
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables, FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -- |
 -- Module     : Data.Array.Accelerate.Repa.Evaluations.Acc
 --
@@ -19,18 +20,23 @@ import Data.Array.Accelerate.Array.Sugar as Sugar
 import Data.Array.Accelerate.Repa.Evaluations.Fun
 import Data.Array.Accelerate.Repa.Evaluations.Exp
 
-evalAcc :: Acc a -> a
+evalAcc :: Acc a -> String
 evalAcc acc = evalOpenAcc acc Empty
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Val aenv -> a
+evalOpenAcc :: OpenAcc aenv a -> Val aenv -> String
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> a
+evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> String
 
-evalPreOpenAcc (Let _acc1 _acc2) _aenv
- = error "Let"
+evalPreOpenAcc (Let acc1 acc2) aenv
+-- = error "Let"
+ = "let " ++ arr1 ++ " in\n\t" ++
+   (evalOpenAcc acc2
+      (aenv `Push`  (error "Strict environment typing prevents new strings")))
+ where
+   arr1 = evalOpenAcc acc1 aenv
 
 evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
  = error "Let2"
@@ -50,10 +56,11 @@ evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
  = error "Acond"
 
 evalPreOpenAcc (Use _arr) _aenv
- = error "Use"
+-- = error "Use"
+ = "use"
 
 evalPreOpenAcc (Unit e) aenv
- = evalExp e aenv
+ = show $ evalExp e aenv
 -- = error "Unit"
 
 evalPreOpenAcc (Reshape _e acc) aenv
@@ -68,14 +75,19 @@ evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
 evalPreOpenAcc (Index _sliceIndex _acc _slix) _aenv
  = error "Index"
 
-evalPreOpenAcc (Map _f _acc) _aenv
- = error "Map"
+evalPreOpenAcc (Map f acc) aenv
+-- = error "Map"
+ = "map " ++ (evalFun f aenv) ++ " " ++ (evalOpenAcc acc aenv)
 
-evalPreOpenAcc (ZipWith _f _acc1 _acc2) _aenv
- = error "ZipWith"
+evalPreOpenAcc (ZipWith f acc1 acc2) aenv
+-- = error "ZipWith"
+ = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
+                                ++ " " ++ (evalOpenAcc acc2 aenv)
 
-evalPreOpenAcc (Fold _f _e _acc) _aenv
- = error "Fold"
+evalPreOpenAcc (Fold f e acc) aenv
+ = "fold " ++ evalFun     f   aenv ++ " "
+           ++ evalExp e   aenv ++ " "
+           ++ evalOpenAcc acc aenv
 
 evalPreOpenAcc (Fold1 _f _acc) _aenv
  = error "Fold1"
@@ -117,3 +129,7 @@ evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _aenv
  = error "Stencil2"
 
 evalPreOpenAcc _ _ = error "Not yet implemented"
+
+-- | instance declaration for Arrays type class for allowing strings
+--instance Arrays String where
+--   arrays = ArraysRunit

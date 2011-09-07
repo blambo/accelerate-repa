@@ -20,7 +20,7 @@ import qualified Data.Array.Accelerate.Smart as Smart
 import Data.Array.Accelerate.Repa.Evaluations (evalAcc)
 
 -- | Used to compile and run an embedded array program using the Repa backend
-run :: Arrays a => Smart.Acc a -> a
+run :: Arrays a => Smart.Acc a -> String
 run = evalAcc . Smart.convertAcc
 
 

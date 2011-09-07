@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP, GADTs, BangPatterns, TypeOperators, PatternGuards #-}
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables, FlexibleContexts #-}
+
 -- |
 -- Module     : Data.Array.Accelerate.Repa.Evaluations.Exp
 --
@@ -18,13 +19,17 @@ import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 
 -- Evaluate an open expression
-evalOpenExp :: OpenExp env aenv a -> Val env -> Val aenv -> a
+evalOpenExp :: OpenExp env aenv a -> Val env -> Val aenv -> String
 
 evalOpenExp (Var idx) env _
    = error "Var"
 
 evalOpenExp (Const c) _ _
-   = Sugar.toElt c
+--   = let x = Sugar.toElt c in
+--      show x
+--     = show (Sugar.toElt c)
+   = "Const"
+--   = evalConst (Sugar.toElt (c :: Elt a => EltRepr a))
 
 evalOpenExp (Tuple tup) env aenv 
    = error "Tuple"
@@ -33,10 +38,10 @@ evalOpenExp (Prj idx e) env aenv
    = error "Prj"
 
 evalOpenExp IndexNil _env _aenv 
-   = error "IndexNil"
+   = "Z"
 
 evalOpenExp (IndexCons sh i) env aenv 
-   = error "IndexCons"
+   = (evalOpenExp sh env aenv) ++ " :. " ++ (evalOpenExp i env aenv)
 
 evalOpenExp (IndexHead ix) env aenv 
    = error "IndexHead"
@@ -45,12 +50,10 @@ evalOpenExp (IndexTail ix) env aenv
    = error "IndexTail"
 
 evalOpenExp (IndexAny) _ _
-   = error "IndexAny"
+   = "Any"
 
 evalOpenExp (Cond c t e) env aenv 
-   = if   evalOpenExp c env aenv
-     then evalOpenExp t env aenv
-     else evalOpenExp e env aenv
+   = error "Cond"
 
 evalOpenExp (PrimConst c) _ _
    = error "PrimConst"
@@ -69,5 +72,9 @@ evalOpenExp (Size acc) _ aenv
 
 -- Evaluate a closed expression
 --
-evalExp :: PreExp OpenAcc aenv t -> Val aenv -> t
+evalExp :: PreExp OpenAcc aenv t -> Val aenv -> String
 evalExp e aenv = evalOpenExp e Empty aenv
+
+-- Evaluates a constant ot a String
+--evalConst :: OpenExp env aenv a -> a
+evalConst _ = error "evalConst"

@@ -17,11 +17,13 @@ import Data.Array.Accelerate.Array.Sugar as Sugar
 
 import Data.Array.Accelerate.Repa.Evaluations.Exp
 
-evalFun :: Fun aenv t -> Val aenv -> t
+evalFun :: Fun aenv t -> Val aenv -> String
 evalFun f aenv = evalOpenFun f Empty aenv
 
-evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> t
+evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> String
 evalOpenFun (Body e) env aenv
+-- = "<BodyFun>"
    = evalOpenExp e env aenv
 evalOpenFun (Lam f)  env aenv
-   = \x -> evalOpenFun f (env `Push` Sugar.fromElt x) aenv
+   = "<LamFun>"
+--   = "\\x ->" ++ evalOpenFun f (env `Push` Sugar.fromElt 'x') aenv
