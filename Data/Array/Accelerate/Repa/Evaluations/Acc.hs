@@ -67,7 +67,7 @@ evalPreOpenAcc (Reshape _e acc) aenv
 
 evalPreOpenAcc (Generate sh f) aenv
 -- = error "Generate"
- = "fromFunction " ++ (evalExp sh aenv) ++ " " ++ (evalFun f aenv)
+ = "fromFunction (" ++ (evalExp sh aenv) ++ ") " ++ (evalFun f aenv)
 
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
  = error "Replicate"
