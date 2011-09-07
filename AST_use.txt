@@ -3,14 +3,32 @@ Description of the different AST node types
 ---
 Let
 ---
+Takes two expressions (acc1 and acc2), evaluates acc1 and the result is 'pushed'
+into the environment when evaluating acc2.
 
-Takes two expressions (acc1 and acc2), evaluates acc1 and uses the binds the result with the environment for use with acc2
+Acc def:
+Let :: (Arrays bndArrs, Arrays bodyArrs)
+    =>            acc  aenv           bndArrs
+    ->            acc (aenv, bndArrs) bodyArrs
+    -> PreOpenAcc acc  aenv           bodyArrs
+
+Should be able to use regular let binding with Repa
 
 ----
 Let2
 ----
+Similar to Let, however it is used when the result of acc1 is a pair of arrays?
+Not really sure about this one. From Interpreter implementation it appears that
+previous analysis is correct, the two returned arrays are added to the
+environment when processing acc2.
 
-Similar to Let, however it is used when the result of acc1 is a pair of arrays? Not really sure about this one.
+Acc def:
+Let2 :: (Arrays bndArrs1, Arrays bndArrs2, Arrays bodyArrs)
+     =>            acc   aenv                       (bndArrs1, bndArrs2)
+     ->            acc ((aenv, bndArrs1), bndArrs2)  bodyArrs
+     -> PreOpenAcc acc   aenv                        bodyArrs
+
+Similar to Interpreter implementation, should be able to use regular let binding
 
 ----------
 PairArrays
@@ -21,31 +39,75 @@ No idea
 ----
 Avar
 ----
+Represents a variable bound by a Let. Using de Bruijn indices, implemented as
+piano key integers, the variable value is extracted from the nested pairs by
+unpacking the pairs until the index counts down to zero
 
-Represents a variable bound by a Let
+Acc def:
+Avar :: Arrays arrs
+     => Idx            aenv arrs
+     -> PreOpenAcc acc aenv arrs
+
+Should be able to implement similarly to Interpreter, just extract the variable
+value using the 'prj' function provided by Data.Array.Accelerate.AST.
 
 -----
 Apply
 -----
-
 Closed function application
+
+Acc def:
+Apply :: (Arrays arrs1, Arrays arrs2)
+      => PreAfun    acc aenv (arrs1 -> arrs2)
+      ->            acc aenv  arrs1
+      -> PreOpenAcc acc aenv  arrs2
+
+The Interpreter implementation pattern matches the Apply function as:
+   evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) aenv
+We evaluate acc and add it to the environment before evaluating funAcc
+
+Shouldn't be anything particularly special when evaluating this as compared with
+the Interpreter implementation, shouldn't call for any special use of Repa.
 
 -----
 Acond
 -----
-
 Array-level if-then-else conditional
+
+Acc def:
+Acond :: (Arrays arrs)
+      => PreExp     acc aenv Bool
+      ->            acc aenv arrs
+      ->            acc aenv arrs
+      -> PreOpenAcc acc aenv arrs
+
+Should be able to just use an if-then-else block
 
 ---
 Use
 ---
 Marks where an array is born.
 
+Acc def:
+Use :: Array dim e
+    -> PreOpenAcc acc aenv (Array dim e)
+
+This will be fiddly, it marks the point where an array is introduced to the
+program. Perhaps can just transform a Acc Array to a Repa Array but this
+requires further study.
+
 ----
 Unit
 ----
-
 Similar to use, but grabs a scalar and puts it into a singleton array
+
+Acc def:
+Unit :: Elt e
+     => PreExp     acc aenv  e
+     -> PreOpenAcc acc aenv (Scalar e)
+
+Should be easier than Use, can either leave the expression as is, or wrap it in
+a scalar Repa array. Should be less translation between representations.
 
 -------
 Reshape
@@ -57,8 +119,15 @@ dimensions (I think)
 --------
 Generate
 --------
-
 Constructs a new array by applying function to each index
+
+Acc def:
+Generate :: (Shape sh, Elt e)
+         => PreExp     acc aenv  sh
+         -> PreFun     acc aenv (sh -> e)
+         -> PreOpenAcc acc aenv (Array sh e)
+
+Should be a pretty easy mapping to the Repa function fromFunction.
 
 ---------
 Replicate
@@ -70,12 +139,14 @@ Replicates an array across one or more dimensions
 Index
 -----
 
-Grabs a subarray of an array. If a dimension is not indexed it is returned whole.
+Grabs a subarray of an array. If a dimension is not indexed it is returned
+whole.
 
 ---
 Map
 ---
-Applies a unary function to all elements in the array. Basically exactly the same as Repa's map
+Applies a unary function to all elements in the array. Basically exactly the
+same as Repa's map
 
 Acc def:
 Map :: (Shape sh, Elt e, Elt e')
@@ -94,12 +165,14 @@ data PreOpenFun (acc :: * -> * -> *) env aenv t where
 
 Use: map
 
-Need to extract the function to be applied from the AST (Body or Lam). Then apply it to the elements of the Array which is the second argument to Map.
+Need to extract the function to be applied from the AST (Body or Lam). Then
+apply it to the elements of the Array which is the second argument to Map.
 
 -------
 ZipWith
 -------
-Uses given binary function pairwise to the elements of the two given arrays. The length of the resulting array is the lesser of the two original lengths.
+Uses given binary function pairwise to the elements of the two given arrays. The
+length of the resulting array is the lesser of the two original lengths.
 
 Acc def:
 ZipWith :: (Shape sh, Elt e, Elt e')
@@ -115,7 +188,8 @@ Similar to Map, need to extract function from PreFun.
 ----
 Fold
 ----
-Folds across INNERMOST dimension of an array with the given ASSOCIATIVE function. Also takes a default value.
+Folds across INNERMOST dimension of an array with the given ASSOCIATIVE
+function. Also takes a default value.
 
 
 
@@ -123,13 +197,15 @@ Folds across INNERMOST dimension of an array with the given ASSOCIATIVE function
 Fold1
 -----
 
-Same as Fold, but without default value. (Also, it is a one not the letter L next to Fold)
+Same as Fold, but without default value. (Also, it is a one not the letter L
+next to Fold)
 
 -------
 FoldSeg
 -------
 
-A segmented fold. Still INNERMOST dimension and an ASSOCIATIVE function, and has a default value.
+A segmented fold. Still INNERMOST dimension and an ASSOCIATIVE function, and has
+a default value.
 
 --------
 Fold1Seg
@@ -141,7 +217,9 @@ FoldSeg without a default value.
 Scanl
 -----
 
-Haskell-style scan of a LINEAR array with a given ASSOCIATIVE function and an initial element. The initial element does not need to be the neutral of the associative function.
+Haskell-style scan of a LINEAR array with a given ASSOCIATIVE function and an
+initial element. The initial element does not need to be the neutral of the
+associative function.
 
 ------
 Scanl'
@@ -177,7 +255,10 @@ Right-to-left version of Scanl1
 Permute
 -------
 
-Generalised forward permutation. It is given a permutation function that determines for each element of the source array, where it should go in the target array. If a target array element is not assigned a value by the permutation function then it's value is determined by the default values array.
+Generalised forward permutation. It is given a permutation function that
+determines for each element of the source array, where it should go in the
+target array. If a target array element is not assigned a value by the
+permutation function then it's value is determined by the default values array.
 
 It takes:
  - Combination function (must be associative and commutative)
@@ -185,13 +266,16 @@ It takes:
  - Permutation function
  - Source array
 
-Permutation function must be total. Input/Output arrays do not need to be the same shape.
+Permutation function must be total. Input/Output arrays do not need to be the
+same shape.
 
 -----------
 Backpermute
 -----------
 
-Generalised multi-dimensional backwards permutation. Input and output array don't need to be same shape, but elements stay the same type. The permutation function must be total.
+Generalised multi-dimensional backwards permutation. Input and output array
+don't need to be same shape, but elements stay the same type. The permutation
+function must be total.
 
 -------
 Stencil
