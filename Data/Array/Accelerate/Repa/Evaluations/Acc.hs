@@ -60,8 +60,7 @@ evalPreOpenAcc (Use _arr) _aenv
  = "use"
 
 evalPreOpenAcc (Unit e) aenv
- = show $ evalExp e aenv
--- = error "Unit"
+ = evalExp e aenv
 
 evalPreOpenAcc (Reshape _e acc) aenv
  = error "Reshape"
