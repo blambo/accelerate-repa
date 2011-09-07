@@ -39,10 +39,10 @@ evalPreOpenAcc (Let acc1 acc2) aenv
    arr1 = evalOpenAcc acc1 aenv
 
 evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
- = error "Let2"
+ = "Let2"
 
 evalPreOpenAcc (PairArrays _acc1 _acc2) _aenv
- = error "PairArrays"
+ = "PairArrays"
 
 evalPreOpenAcc (Avar _idx) _aenv
  = error "Avar"
