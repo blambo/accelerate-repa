@@ -80,9 +80,13 @@ evalPreOpenAcc (Reshape e acc) aenv
  = error "reshape"
 
 evalPreOpenAcc (Generate sh f) aenv
- = error "Generate"
+ = RepaParsed VarUnit returnString
 -- = "fromFunction (" ++ (evalExp sh aenv) ++ ") ("
 --                    ++ (evalFun f aenv)  ++ ")"
+ where
+   expS                   = evalExp sh aenv
+   RepaParsed funVar funS = evalFun f aenv
+   returnString           = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
 
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
  = error "Replicate"

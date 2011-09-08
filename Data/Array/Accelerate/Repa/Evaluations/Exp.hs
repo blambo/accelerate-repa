@@ -19,7 +19,8 @@ import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 
 -- Evaluate an open expression
-evalOpenExp :: forall a env aenv . OpenExp env aenv a -> Val env -> Val aenv -> String
+evalOpenExp :: forall a env aenv .  OpenExp env aenv a
+                                 -> Val env -> Val aenv -> String
 
 evalOpenExp (Var idx) env _
    = error "Var"
