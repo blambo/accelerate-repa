@@ -19,17 +19,13 @@ import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 
 -- Evaluate an open expression
-evalOpenExp :: OpenExp env aenv a -> Val env -> Val aenv -> String
+evalOpenExp :: forall a env aenv . OpenExp env aenv a -> Val env -> Val aenv -> String
 
 evalOpenExp (Var idx) env _
    = error "Var"
 
 evalOpenExp (Const c) _ _
---   = let x = Sugar.toElt c in
---      show x
---     = show (Sugar.toElt c)
-   = "Const"
---   = evalConst (Sugar.toElt (c :: Elt a => EltRepr a))
+   = show ((Sugar.toElt c) :: a)
 
 evalOpenExp (Tuple tup) env aenv 
    = error "Tuple"
@@ -74,7 +70,3 @@ evalOpenExp (Size acc) _ aenv
 --
 evalExp :: PreExp OpenAcc aenv t -> Val aenv -> String
 evalExp e aenv = evalOpenExp e Empty aenv
-
--- Evaluates a constant ot a String
---evalConst :: OpenExp env aenv a -> a
-evalConst _ = error "evalConst"
