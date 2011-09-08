@@ -19,27 +19,32 @@ import Data.Array.Accelerate.Array.Sugar as Sugar
 
 import Data.Array.Accelerate.Repa.Evaluations.Fun
 import Data.Array.Accelerate.Repa.Evaluations.Exp
+import Data.Array.Accelerate.Repa.RepaParsed
 
 evalAcc :: Acc a -> String
-evalAcc acc = evalOpenAcc acc Empty
+evalAcc acc
+ = parsedS
+ where
+   RepaParsed _ parsedS = evalOpenAcc acc Empty
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Val aenv -> String
+evalOpenAcc :: OpenAcc aenv a -> Val aenv -> RepaParsed a
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> String
+evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
 
 evalPreOpenAcc (Let acc1 acc2) aenv
--- = error "Let"
- = "let " ++ arr1 ++ " in\n\t" ++
+{- = "let " ++ arr1 ++ " in\n\t" ++
    (evalOpenAcc acc2
       (aenv `Push`  (error "Strict environment typing prevents new strings")))
  where
-   arr1 = evalOpenAcc acc1 aenv
+   RepaParsed arr1 arr1S = evalOpenAcc acc1 aenv
+-}
+ = error "let"
 
 evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
- = "Let2"
+ = error "Let2"
 
 evalPreOpenAcc (PairArrays acc1 acc2) aenv
  = "( (" ++ arr1 ++ "), (" ++ arr2 ++ ") )"
@@ -60,19 +65,23 @@ evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
 
 evalPreOpenAcc (Use _arr) _aenv
 -- = error "Use"
- = "use"
+ = RepaParsed (error "use") "use"
 
 evalPreOpenAcc (Unit e) aenv
- = evalExp e aenv
+ = RepaParsed (error "Unit") expS
+ where
+   expS = evalExp e aenv
+-- = error "unit"
 
 evalPreOpenAcc (Reshape e acc) aenv
- = "reshape (" ++ (evalExp e aenv)       ++ ") ("
-               ++ (evalOpenAcc acc aenv) ++ ")"
+-- = "reshape (" ++ (evalExp e aenv)       ++ ") ("
+--               ++ (evalOpenAcc acc aenv) ++ ")"
+ = error "reshape"
 
 evalPreOpenAcc (Generate sh f) aenv
--- = error "Generate"
- = "fromFunction (" ++ (evalExp sh aenv) ++ ") ("
-                    ++ (evalFun f aenv)  ++ ")"
+ = error "Generate"
+-- = "fromFunction (" ++ (evalExp sh aenv) ++ ") ("
+--                    ++ (evalFun f aenv)  ++ ")"
 
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
  = error "Replicate"
@@ -82,17 +91,21 @@ evalPreOpenAcc (Index _sliceIndex _acc _slix) _aenv
 
 evalPreOpenAcc (Map f acc) aenv
 -- = error "Map"
- = "map " ++ (evalFun f aenv) ++ " " ++ (evalOpenAcc acc aenv)
+ = RepaParsed (error "no map computation") ("map " ++ funS ++ " " ++ arrS)
+ where
+   RepaParsed _fun funS = evalFun     f   aenv
+   RepaParsed _arr arrS = evalOpenAcc acc aenv
 
 evalPreOpenAcc (ZipWith f acc1 acc2) aenv
--- = error "ZipWith"
- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
-                                ++ " " ++ (evalOpenAcc acc2 aenv)
+ = error "ZipWith"
+-- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
+--                                ++ " " ++ (evalOpenAcc acc2 aenv)
 
 evalPreOpenAcc (Fold f e acc) aenv
- = "fold " ++ evalFun     f   aenv ++ " "
-           ++ evalExp e   aenv ++ " "
-           ++ evalOpenAcc acc aenv
+-- = "fold " ++ evalFun     f   aenv ++ " "
+--           ++ evalExp e   aenv ++ " "
+--           ++ evalOpenAcc acc aenv
+ = error "fold"
 
 evalPreOpenAcc (Fold1 _f _acc) _aenv
  = error "Fold1"

@@ -16,13 +16,15 @@ import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 
 import Data.Array.Accelerate.Repa.Evaluations.Exp
+import Data.Array.Accelerate.Repa.RepaParsed
 
-evalFun :: Fun aenv t -> Val aenv -> String
+evalFun :: Fun aenv t -> Val aenv -> RepaParsed t
 evalFun f aenv = evalOpenFun f Empty aenv
 
-evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> String
+evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> RepaParsed t
 evalOpenFun (Body e) env aenv
 -- = "<BodyFun>"
-   = evalOpenExp e env aenv
+-- = evalOpenExp e env aenv
+ = error "BodyFun"
 evalOpenFun (Lam f)  env aenv
    = "\\x -> " ++ evalOpenFun f (env `Push` (error "Lam")) aenv
