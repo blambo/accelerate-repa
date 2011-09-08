@@ -62,12 +62,14 @@ evalPreOpenAcc (Use _arr) _aenv
 evalPreOpenAcc (Unit e) aenv
  = evalExp e aenv
 
-evalPreOpenAcc (Reshape _e acc) aenv
- = error "Reshape"
+evalPreOpenAcc (Reshape e acc) aenv
+ = "reshape (" ++ (evalExp e aenv)       ++ ") ("
+               ++ (evalOpenAcc acc aenv) ++ ")"
 
 evalPreOpenAcc (Generate sh f) aenv
 -- = error "Generate"
- = "fromFunction (" ++ (evalExp sh aenv) ++ ") " ++ (evalFun f aenv)
+ = "fromFunction (" ++ (evalExp sh aenv) ++ ") ("
+                    ++ (evalFun f aenv)  ++ ")"
 
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
  = error "Replicate"
