@@ -12,7 +12,10 @@ Let :: (Arrays bndArrs, Arrays bodyArrs)
     ->            acc (aenv, bndArrs) bodyArrs
     -> PreOpenAcc acc  aenv           bodyArrs
 
-Should be able to use regular let binding with Repa
+Should be able to use regular let binding with Repa. However, issue with
+naming of bound variable.
+Perhaps naming should use 'x' followed by the variables de Bruijn index.
+This should give it an unique name in the generated code.
 
 ----
 Let2
