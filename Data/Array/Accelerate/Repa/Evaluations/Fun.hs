@@ -25,5 +25,4 @@ evalOpenFun (Body e) env aenv
 -- = "<BodyFun>"
    = evalOpenExp e env aenv
 evalOpenFun (Lam f)  env aenv
-   = "<LamFun>"
---   = "\\x ->" ++ evalOpenFun f (env `Push` Sugar.fromElt 'x') aenv
+   = "\\x -> " ++ evalOpenFun f (env `Push` (error "Lam")) aenv
