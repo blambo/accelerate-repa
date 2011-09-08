@@ -7,7 +7,11 @@
 
 module Data.Array.Accelerate.Repa.RepaParsed
    ( RepaParsed(..)
+   , PossVar(..)
    )
    where
 
-   data RepaParsed a = RepaParsed a String
+data RepaParsed a = RepaParsed PossVar String
+
+data PossVar = VarUnit
+             | VarTup  PossVar String

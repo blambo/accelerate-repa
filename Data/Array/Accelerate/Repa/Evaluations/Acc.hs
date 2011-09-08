@@ -35,22 +35,23 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
 
 evalPreOpenAcc (Let acc1 acc2) aenv
-{- = "let " ++ arr1 ++ " in\n\t" ++
-   (evalOpenAcc acc2
-      (aenv `Push`  (error "Strict environment typing prevents new strings")))
+ = RepaParsed vars returnString
  where
-   RepaParsed arr1 arr1S = evalOpenAcc acc1 aenv
--}
- = error "let"
+   RepaParsed _ arr1S = evalOpenAcc acc1 aenv
+   RepaParsed (VarTup vars curr) arr2S = evalOpenAcc acc2 (aenv `Push`
+                                                            error "from let")
+
+   returnString = "let x" ++ curr ++ " = " ++ arr1S ++ " in\n\t" ++ arr2S
+
 
 evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
  = error "Let2"
 
 evalPreOpenAcc (PairArrays acc1 acc2) aenv
- = "( (" ++ arr1 ++ "), (" ++ arr2 ++ ") )"
+ = RepaParsed (error "PairArrays") $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
  where
-   arr1 = evalOpenAcc acc1 aenv
-   arr2 = evalOpenAcc acc2 aenv
+   RepaParsed _arr1 arr1S = evalOpenAcc acc1 aenv
+   RepaParsed _arr2 arr2S = evalOpenAcc acc2 aenv
 
 evalPreOpenAcc (Avar _idx) _aenv
  = error "Avar"

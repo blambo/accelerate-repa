@@ -27,4 +27,6 @@ evalOpenFun (Body e) env aenv
 -- = evalOpenExp e env aenv
  = error "BodyFun"
 evalOpenFun (Lam f)  env aenv
-   = "\\x -> " ++ evalOpenFun f (env `Push` (error "Lam")) aenv
+ = RepaParsed (error "Lam") ("\\x -> " ++ funS)
+ where
+   RepaParsed _fun funS = evalOpenFun f (env `Push` (error "Lam")) aenv
