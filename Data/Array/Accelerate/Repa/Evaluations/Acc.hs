@@ -41,8 +41,11 @@ evalPreOpenAcc (Let acc1 acc2) aenv
 evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
  = "Let2"
 
-evalPreOpenAcc (PairArrays _acc1 _acc2) _aenv
- = "PairArrays"
+evalPreOpenAcc (PairArrays acc1 acc2) aenv
+ = "( (" ++ arr1 ++ "), (" ++ arr2 ++ ") )"
+ where
+   arr1 = evalOpenAcc acc1 aenv
+   arr2 = evalOpenAcc acc2 aenv
 
 evalPreOpenAcc (Avar _idx) _aenv
  = error "Avar"
