@@ -8,10 +8,14 @@
 module Data.Array.Accelerate.Repa.RepaParsed
    ( RepaParsed(..)
    , PossVar(..)
+   , showVar
    )
    where
 
 data RepaParsed a = RepaParsed PossVar String
 
 data PossVar = VarUnit
-             | VarTup  PossVar String
+             | VarTup  PossVar Int 
+
+showVar :: Int -> String
+showVar n = "y" ++ (show n)

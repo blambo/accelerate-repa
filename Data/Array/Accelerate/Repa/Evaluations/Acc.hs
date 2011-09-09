@@ -35,18 +35,43 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
 
 evalPreOpenAcc (Let acc1 acc2) aenv
- = RepaParsed vars returnString
+ = RepaParsed returnVars returnString
  where
-   RepaParsed _ arr1S = evalOpenAcc acc1 aenv
-   RepaParsed (VarTup vars curr) arr2S = evalOpenAcc acc2 (aenv `Push`
-                                                            error "from let")
+   RepaParsed _   arr1S = evalOpenAcc acc1 aenv
+   RepaParsed var arr2S = evalOpenAcc acc2 (aenv `Push` error "from let")
 
-   returnString = "let x" ++ curr ++ " = " ++ arr1S ++ " in\n\t" ++ arr2S
+   returnString = case var of
+                     VarUnit          -> "let x" ++ " = (" ++ arr1S ++ ") in\n\t"
+                                                 ++ arr2S
+                     VarTup vars curr -> "let " ++ (showVar curr) ++ " = (" ++ arr1S
+                                                ++ ") in\n\t" ++ arr2S
+   returnVars   = case var of
+                     VarUnit          -> VarUnit
+                     VarTup vars curr -> vars
 
 
-evalPreOpenAcc (Let2 _acc1 _acc2) _aenv
- = error "Let2"
+evalPreOpenAcc (Let2 acc1 acc2) aenv
+ = RepaParsed returnVars returnString
+ where
+   RepaParsed _arr1V arr1S = evalOpenAcc acc1 aenv
+   RepaParsed arr2V arr2S = evalOpenAcc acc2 (aenv `Push` (error "let2,1") 
+                                                   `Push` (error "let2,2"))
 
+   var1 = case arr2V of
+            VarUnit         -> "_"
+            VarTup _vs curr -> (showVar curr)
+   var2 = case arr2V of
+            VarUnit         -> "_"
+            VarTup vs _curr -> case vs of
+                                 VarUnit         -> "_"
+                                 VarTup vs' curr -> (showVar curr)
+   returnVars = case arr2V of
+            VarUnit      -> VarUnit
+            VarTup vs _c -> case vs of
+                              VarUnit       -> VarUnit
+                              VarTup vs' _c -> vs'
+   returnString = "let (" ++ var1 ++ ", " ++ var2 ++ ") = (" ++ arr1S
+                          ++ ") in \n\t" ++ arr2S
 evalPreOpenAcc (PairArrays acc1 acc2) aenv
  = RepaParsed (error "PairArrays") $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
  where
@@ -153,6 +178,12 @@ evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _aenv
 
 evalPreOpenAcc _ _ = error "Not yet implemented"
 
--- | instance declaration for Arrays type class for allowing strings
---instance Arrays String where
---   arrays = ArraysRunit
+getVarNum :: Idx env t -> Int
+getVarNum ZeroIdx = 0
+getVarNum (SuccIdx idx) = 1 + (getVarNum idx)
+
+genVars :: Idx env t -> PossVar
+genVars ZeroIdx = VarTup VarUnit 0
+genVars (SuccIdx idx) = VarTup vs (1 + last)
+                        where
+                           vs@(VarTup _ last) = genVars idx
