@@ -66,10 +66,10 @@ evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
 
 evalPreOpenAcc (Use _arr) _aenv
 -- = error "Use"
- = RepaParsed (error "use") "use"
+ = RepaParsed VarUnit "use"
 
 evalPreOpenAcc (Unit e) aenv
- = RepaParsed (error "Unit") expS
+ = RepaParsed VarUnit expS
  where
    expS = evalExp e aenv
 -- = error "unit"
