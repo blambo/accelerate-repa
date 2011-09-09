@@ -72,14 +72,21 @@ evalPreOpenAcc (Let2 acc1 acc2) aenv
                               VarTup vs' _c -> vs'
    returnString = "let (" ++ var1 ++ ", " ++ var2 ++ ") = (" ++ arr1S
                           ++ ") in \n\t" ++ arr2S
+
+
+--TODO: Need better handling of variables being passed from either side of tuple
 evalPreOpenAcc (PairArrays acc1 acc2) aenv
- = RepaParsed (error "PairArrays") $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
+ = RepaParsed arr1 $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
  where
-   RepaParsed _arr1 arr1S = evalOpenAcc acc1 aenv
+   RepaParsed arr1 arr1S = evalOpenAcc acc1 aenv
    RepaParsed _arr2 arr2S = evalOpenAcc acc2 aenv
 
-evalPreOpenAcc (Avar _idx) _aenv
- = error "Avar"
+evalPreOpenAcc (Avar idx) aenv
+ = RepaParsed allVars var
+ where
+   var    = "y" ++ varNum
+   varNum = show $ getVarNum idx
+   allVars = genVars idx
 
 evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _aenv
  = error "Apply"
