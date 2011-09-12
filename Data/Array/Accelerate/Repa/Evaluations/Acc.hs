@@ -43,8 +43,8 @@ evalPreOpenAcc (Let acc1 acc2) aenv
    returnString = case var of
                      VarUnit          -> "let x" ++ " = (" ++ arr1S ++ ") in "
                                                  ++ arr2S
-                     VarTup vars curr -> "let " ++ (showVar curr) ++ " = (" ++ arr1S
-                                                ++ ") in " ++ arr2S
+                     VarTup vars curr -> "let " ++ (showVar curr) ++ " = ("
+                                                ++ arr1S ++ ") in " ++ arr2S
    returnVars   = case var of
                      VarUnit          -> VarUnit
                      VarTup vars curr -> vars
