@@ -49,6 +49,7 @@ evalPreOpenAcc (Let acc1 acc2) aenv
                      VarUnit          -> VarUnit
                      VarTup vars curr -> vars
 
+
 -- Uses somewhat dodgy method of variable naming, based on knowledge that the
 -- Smart module will name variables in specific way depending if fstA or sndA is
 -- called
@@ -85,6 +86,7 @@ evalPreOpenAcc (PairArrays acc1 acc2) aenv
    RepaParsed _arr1 arr1S = evalOpenAcc acc1 aenv
    RepaParsed arr2 arr2S = evalOpenAcc acc2 aenv
 
+
 evalPreOpenAcc (Avar idx) aenv
  = RepaParsed allVars var
  where
@@ -92,23 +94,26 @@ evalPreOpenAcc (Avar idx) aenv
    varNum = show $ getVarNum idx
    allVars = genVars idx
 
+
 evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _aenv
  = error "Apply"
 evalPreOpenAcc (Apply _afun _acc) _aenv
    = error "GHC pattern matching does not detect that this case is impossible"
 
+
 evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
  = error "Acond"
 
-evalPreOpenAcc (Use _arr) _aenv
--- = error "Use"
+
+evalPreOpenAcc (Use arr) _aenv
  = RepaParsed VarUnit "use"
+
 
 evalPreOpenAcc (Unit e) aenv
  = RepaParsed VarUnit expS
  where
    expS = evalExp e aenv
--- = error "unit"
+
 
 evalPreOpenAcc (Reshape e acc) aenv
 -- = "reshape (" ++ (evalExp e aenv)       ++ ") ("
@@ -117,30 +122,32 @@ evalPreOpenAcc (Reshape e acc) aenv
 
 evalPreOpenAcc (Generate sh f) aenv
  = RepaParsed VarUnit returnString
--- = "fromFunction (" ++ (evalExp sh aenv) ++ ") ("
---                    ++ (evalFun f aenv)  ++ ")"
  where
    expS                   = evalExp sh aenv
    RepaParsed funVar funS = evalFun f aenv
    returnString           = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
 
+
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
  = error "Replicate"
+
 
 evalPreOpenAcc (Index _sliceIndex _acc _slix) _aenv
  = error "Index"
 
+
 evalPreOpenAcc (Map f acc) aenv
--- = error "Map"
  = RepaParsed (error "no map computation") ("map " ++ funS ++ " " ++ arrS)
  where
    RepaParsed _fun funS = evalFun     f   aenv
    RepaParsed _arr arrS = evalOpenAcc acc aenv
 
+
 evalPreOpenAcc (ZipWith f acc1 acc2) aenv
  = error "ZipWith"
 -- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
 --                                ++ " " ++ (evalOpenAcc acc2 aenv)
+
 
 evalPreOpenAcc (Fold f e acc) aenv
 -- = "fold " ++ evalFun     f   aenv ++ " "
@@ -148,46 +155,62 @@ evalPreOpenAcc (Fold f e acc) aenv
 --           ++ evalOpenAcc acc aenv
  = error "fold"
 
+
 evalPreOpenAcc (Fold1 _f _acc) _aenv
  = error "Fold1"
+
 
 evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _aenv
  = error "FoldSeg"
 
+
 evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _aenv
  = error "Fold1Seg"
+
 
 evalPreOpenAcc (Scanl _f _e _acc) _aenv
  = error "Scanl"
 
+
 evalPreOpenAcc (Scanl' _f _e _acc) _aenv
  = error "Scanl'"
+
 
 evalPreOpenAcc (Scanl1 _f _acc) _aenv
  = error "Scanl1"
 
+
 evalPreOpenAcc (Scanr _f _e _acc) _aenv
  = error "Scanr"
+
 
 evalPreOpenAcc (Scanr' _f _e _acc) _aenv
  = error "Scanr'"
 
+
 evalPreOpenAcc (Scanr1 _f _acc) _aenv
  = error "Scanr1"
+
 
 evalPreOpenAcc (Permute _f _dftAcc _p _acc) _aenv
  = error "Permute"
 
+
 evalPreOpenAcc (Backpermute _e _p _acc) _aenv
  = error "Backpermute"
+
 
 evalPreOpenAcc (Stencil _sten _bndy _acc) _aenv
  = error "Stencil"
 
+
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _aenv
  = error "Stencil2"
 
+
 evalPreOpenAcc _ _ = error "Not yet implemented"
+
+
 
 getVarNum :: Idx env t -> Int
 getVarNum ZeroIdx = 0
