@@ -116,9 +116,12 @@ evalPreOpenAcc (Unit e) aenv
 
 
 evalPreOpenAcc (Reshape e acc) aenv
--- = "reshape (" ++ (evalExp e aenv)       ++ ") ("
---               ++ (evalOpenAcc acc aenv) ++ ")"
- = error "reshape"
+ = RepaParsed returnVars returnString
+ where
+   RepaParsed returnVars arrS = evalOpenAcc acc aenv
+
+   returnString = "reshape (" ++ (evalExp e aenv) ++ ") (" ++ arrS ++ ")"
+
 
 evalPreOpenAcc (Generate sh f) aenv
  = RepaParsed VarUnit returnString
