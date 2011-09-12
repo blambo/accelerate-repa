@@ -49,7 +49,9 @@ evalPreOpenAcc (Let acc1 acc2) aenv
                      VarUnit          -> VarUnit
                      VarTup vars curr -> vars
 
-
+-- Uses somewhat dodgy method of variable naming, based on knowledge that the
+-- Smart module will name variables in specific way depending if fstA or sndA is
+-- called
 evalPreOpenAcc (Let2 acc1 acc2) aenv
  = RepaParsed returnVars returnString
  where
@@ -58,13 +60,15 @@ evalPreOpenAcc (Let2 acc1 acc2) aenv
                                                    `Push` (error "let2,2"))
 
    var1 = case arr2V of
-            VarUnit         -> "_"
-            VarTup _vs curr -> (showVar curr)
+            VarTup (VarUnit)    _    -> "_"
+            VarTup (VarTup _ _) curr -> showVar curr
+            otherwise                -> error "Let2 binding not complete"
+
    var2 = case arr2V of
-            VarUnit         -> "_"
-            VarTup vs _curr -> case vs of
-                                 VarUnit         -> "_"
-                                 VarTup vs' curr -> (showVar curr)
+            VarTup (VarUnit)  curr -> showVar curr
+            VarTup (VarTup _ curr) _ -> "_"
+            otherwise                -> error "Let2 binding not complete"
+
    returnVars = case arr2V of
             VarUnit      -> VarUnit
             VarTup vs _c -> case vs of
