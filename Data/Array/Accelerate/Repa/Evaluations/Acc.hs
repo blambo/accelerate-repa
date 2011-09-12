@@ -41,10 +41,10 @@ evalPreOpenAcc (Let acc1 acc2) aenv
    RepaParsed var arr2S = evalOpenAcc acc2 (aenv `Push` error "from let")
 
    returnString = case var of
-                     VarUnit          -> "let x" ++ " = (" ++ arr1S ++ ") in\n\t"
+                     VarUnit          -> "let x" ++ " = (" ++ arr1S ++ ") in "
                                                  ++ arr2S
                      VarTup vars curr -> "let " ++ (showVar curr) ++ " = (" ++ arr1S
-                                                ++ ") in\n\t" ++ arr2S
+                                                ++ ") in " ++ arr2S
    returnVars   = case var of
                      VarUnit          -> VarUnit
                      VarTup vars curr -> vars
@@ -75,15 +75,15 @@ evalPreOpenAcc (Let2 acc1 acc2) aenv
                               VarUnit       -> VarUnit
                               VarTup vs' _c -> vs'
    returnString = "let (" ++ var1 ++ ", " ++ var2 ++ ") = (" ++ arr1S
-                          ++ ") in \n\t" ++ arr2S
+                          ++ ") in " ++ arr2S
 
 
 --TODO: Need better handling of variables being passed from either side of tuple
 evalPreOpenAcc (PairArrays acc1 acc2) aenv
- = RepaParsed arr1 $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
+ = RepaParsed arr2 $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
  where
-   RepaParsed arr1 arr1S = evalOpenAcc acc1 aenv
-   RepaParsed _arr2 arr2S = evalOpenAcc acc2 aenv
+   RepaParsed _arr1 arr1S = evalOpenAcc acc1 aenv
+   RepaParsed arr2 arr2S = evalOpenAcc acc2 aenv
 
 evalPreOpenAcc (Avar idx) aenv
  = RepaParsed allVars var
