@@ -38,7 +38,8 @@ evalOpenExp IndexNil _env _aenv
    = "Z"
 
 evalOpenExp (IndexCons sh i) env aenv 
-   = (evalOpenExp sh env aenv) ++ " :. " ++ (evalOpenExp i env aenv)
+   = (evalOpenExp sh env aenv) ++ " :. ("
+     ++ (evalOpenExp i env aenv) ++ " :: Int)"
 
 evalOpenExp (IndexHead ix) env aenv 
    = error "IndexHead"
