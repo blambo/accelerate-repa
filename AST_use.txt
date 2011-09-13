@@ -36,8 +36,8 @@ Similar to Interpreter implementation, should be able to use regular let binding
 ----------
 PairArrays
 ----------
-
-No idea
+Fairly simple, just evaluate both Accelerate array expressions and return a
+string that is a tuple of the two results.
 
 ----
 Avar
@@ -96,8 +96,10 @@ Use :: Array dim e
     -> PreOpenAcc acc aenv (Array dim e)
 
 This will be fiddly, it marks the point where an array is introduced to the
-program. Perhaps can just transform a Acc Array to a Repa Array but this
-requires further study.
+program. My current thinking is to extract the shape and a list of array
+elements of the Array. Then using Repa's fromList function to create a new
+Repa array. Had issues with the type system when attempting to extract the
+shape.
 
 ----
 Unit
