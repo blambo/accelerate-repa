@@ -13,8 +13,7 @@ main = do
 
    -- use
    putStrLn "---USE---"
-   -- print $ Repa.run $ use  $ constant (3 :: Int)
-   putStrLn "TODO: 'use'"
+   putStrLn $ Repa.run $ use $ fromList (Z :. (3 :: Int)) ([1,2,3] :: [Int])
 
    -- generate
    putStrLn "---GENERATE---"
