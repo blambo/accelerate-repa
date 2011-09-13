@@ -21,9 +21,8 @@ main = do
 
    -- replicate
    putStrLn "---REPLICATE---"
-   putStrLn "TODO: 'replicate'"
---   print $ Repa.run $ replicate (Z :. All :. 3)
---                    $ generate  (index1 3)      (\x -> constant 1)
+   putStrLn $ Repa.run $ replicate replicateShape
+                       $ generate  (index0)      (\x -> constant (1 :: Int))
 
    -- pairA
    putStrLn "---PAIRA---"
@@ -54,3 +53,6 @@ scalarArr c = generate index0 (\x -> constant c)
 
 index2 :: Exp (Z:.Int) -> Int -> Exp (Z:.Int:.Int)
 index2 sh x = lift ( sh :. x )
+
+replicateShape :: Exp (Z :. Int)
+replicateShape = lift $ Z :. (3 :: Int)
