@@ -35,7 +35,7 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
 
 evalPreOpenAcc (Let acc1 acc2) aenv
- = RepaParsed returnVars returnString
+ = RepaParsed returnVars ("TODO let" ++ returnString)
  where
    RepaParsed _   arr1S = evalOpenAcc acc1 aenv
    RepaParsed var arr2S = evalOpenAcc acc2 (aenv `Push` error "from let")
@@ -106,7 +106,7 @@ evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
 
 
 evalPreOpenAcc (Use arr) _aenv
- = RepaParsed VarUnit "use"
+ = RepaParsed VarUnit "TODO:use"
 
 
 evalPreOpenAcc (Unit e) aenv
