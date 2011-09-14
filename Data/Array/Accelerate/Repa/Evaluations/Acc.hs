@@ -34,8 +34,9 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 -- | Traverses over AST
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
 
+-- TODO
 evalPreOpenAcc (Let acc1 acc2) aenv
- = RepaParsed returnVars ("TODO let" ++ returnString)
+ = RepaParsed returnVars returnString
  where
    RepaParsed _   arr1S = evalOpenAcc acc1 aenv
    RepaParsed var arr2S = evalOpenAcc acc2 (aenv `Push` error "from let")
@@ -104,9 +105,9 @@ evalPreOpenAcc (Apply _afun _acc) _aenv
 evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
  = error "Acond"
 
-
+-- TODO
 evalPreOpenAcc (Use arr) _aenv
- = RepaParsed VarUnit "TODO:use"
+ = RepaParsed VarUnit "use"
 
 
 evalPreOpenAcc (Unit e) aenv
@@ -147,7 +148,7 @@ evalPreOpenAcc (Map f acc) aenv
 
 
 evalPreOpenAcc (ZipWith f acc1 acc2) aenv
- = error "ZipWith"
+ = RepaParsed VarUnit "ZipWith"
 -- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
 --                                ++ " " ++ (evalOpenAcc acc2 aenv)
 
