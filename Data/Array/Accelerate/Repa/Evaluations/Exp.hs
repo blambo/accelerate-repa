@@ -18,21 +18,23 @@ module Data.Array.Accelerate.Repa.Evaluations.Exp
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 
+import Data.Array.Accelerate.Repa.Evaluations.Prim
+
 -- Evaluate an open expression
 evalOpenExp :: forall a env aenv .  OpenExp env aenv a
                                  -> Val env -> Val aenv -> String
 
 evalOpenExp (Var idx) env _
-   = error "Var"
+   = "Var"
 
 evalOpenExp (Const c) _ _
    = show ((Sugar.toElt c) :: a)
 
 evalOpenExp (Tuple tup) env aenv 
-   = error "Tuple"
+   = "Tuple"
 
 evalOpenExp (Prj idx e) env aenv 
-   = error "Prj"
+   = "Prj"
 
 evalOpenExp IndexNil _env _aenv 
    = "Z"
@@ -42,33 +44,37 @@ evalOpenExp (IndexCons sh i) env aenv
      ++ (evalOpenExp i env aenv) ++ " :: Int)"
 
 evalOpenExp (IndexHead ix) env aenv 
-   = error "IndexHead"
+   = "IndexHead"
 
 evalOpenExp (IndexTail ix) env aenv 
-   = error "IndexTail"
+   = "IndexTail"
 
 evalOpenExp (IndexAny) _ _
    = "Any"
 
 evalOpenExp (Cond c t e) env aenv 
-   = error "Cond"
+   = "Cond"
 
 evalOpenExp (PrimConst c) _ _
-   = error "PrimConst"
+   = "PrimConst"
 
 evalOpenExp (PrimApp p arg) env aenv 
-   = error "PrimApp"
+   = "PrimApp " ++ (evalPrim p) ++ (evalOpenExp arg env aenv)
 
 evalOpenExp (IndexScalar acc ix) env aenv 
-   = error "IndexScalar"
+   = "IndexScalar"
 
 evalOpenExp (Shape acc) _ aenv 
-   = error "Shape"
+   = "Shape"
 
 evalOpenExp (Size acc) _ aenv 
-   = error "Size"
+   = "Size"
 
 -- Evaluate a closed expression
 --
 evalExp :: PreExp OpenAcc aenv t -> Val aenv -> String
 evalExp e aenv = evalOpenExp e Empty aenv
+
+--evalPrim :: forall a. a -> String
+--evalPrim _ = "prim"
+
