@@ -115,7 +115,7 @@ evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
 
 
 evalPreOpenAcc (Map f acc) letLevel aenv
- = RepaParsed ("map " ++ funS ++ " " ++ arrS)
+ = RepaParsed ("map (" ++ funS ++ ") (" ++ arrS ++ ")")
  where
    RepaParsed funS = evalFun     f   aenv
    RepaParsed arrS = evalOpenAcc acc letLevel aenv
