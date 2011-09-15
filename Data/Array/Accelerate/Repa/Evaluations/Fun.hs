@@ -24,9 +24,9 @@ evalFun f aenv = evalOpenFun f Empty aenv
 evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> RepaParsed t
 evalOpenFun (Body e) env aenv
 -- = "<BodyFun>"
- = RepaParsed VarUnit $ evalOpenExp e env aenv
+ = RepaParsed $ evalOpenExp e env aenv
 -- = error "BodyFun"
 evalOpenFun (Lam f)  env aenv
- = RepaParsed (error "Lam") ("\\x -> " ++ funS)
+ = RepaParsed ("\\x -> " ++ funS)
  where
-   RepaParsed _fun funS = evalOpenFun f (env `Push` (error "Lam")) aenv
+   RepaParsed funS = evalOpenFun f (env `Push` (error "Lam")) aenv

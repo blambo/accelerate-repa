@@ -12,7 +12,7 @@ module Data.Array.Accelerate.Repa.RepaParsed
    )
    where
 
-data RepaParsed a = RepaParsed PossVar String
+data RepaParsed a = RepaParsed String
 
 data PossVar = VarUnit
              | VarTup  PossVar Int 

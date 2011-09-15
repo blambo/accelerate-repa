@@ -25,194 +25,173 @@ evalAcc :: Acc a -> String
 evalAcc acc
  = parsedS
  where
-   RepaParsed _ parsedS = evalOpenAcc acc Empty
+   RepaParsed parsedS = evalOpenAcc acc 0 Empty
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Val aenv -> RepaParsed a
+evalOpenAcc :: OpenAcc aenv a -> Int -> Val aenv -> RepaParsed a
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Val aenv -> RepaParsed a
+evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> Val aenv -> RepaParsed a
 
 -- TODO
-evalPreOpenAcc (Let acc1 acc2) aenv
- = RepaParsed returnVars returnString
+evalPreOpenAcc (Let acc1 acc2) letLevel aenv
+ = RepaParsed returnString
  where
-   RepaParsed _   arr1S = evalOpenAcc acc1 aenv
-   RepaParsed var arr2S = evalOpenAcc acc2 (aenv `Push` error "from let")
+   RepaParsed arr1S = evalOpenAcc acc1 letLevel      aenv
+   RepaParsed arr2S = evalOpenAcc acc2 (letLevel+1) (aenv `Push` error "from let")
 
-   returnString = case var of
-                     VarUnit          -> "let x" ++ " = (" ++ arr1S ++ ") in "
-                                                 ++ arr2S
-                     VarTup vars curr -> "let " ++ (showVar curr) ++ " = ("
-                                                ++ arr1S ++ ") in " ++ arr2S
-   returnVars   = case var of
-                     VarUnit          -> VarUnit
-                     VarTup vars curr -> vars
+   returnString = "let y" ++ (show letLevel) ++ " = (" ++ arr1S ++ ") in " ++ arr2S
 
 
 -- Uses somewhat dodgy method of variable naming, based on knowledge that the
 -- Smart module will name variables in specific way depending if fstA or sndA is
 -- called
-evalPreOpenAcc (Let2 acc1 acc2) aenv
- = RepaParsed returnVars returnString
+evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
+ = RepaParsed returnString
  where
-   RepaParsed _arr1V arr1S = evalOpenAcc acc1 aenv
-   RepaParsed arr2V arr2S = evalOpenAcc acc2 (aenv `Push` (error "let2,1") 
-                                                   `Push` (error "let2,2"))
+   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2S = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
+                                                          `Push` (error "let2,2"))
 
-   var1 = case arr2V of
-            VarTup (VarUnit)    _    -> "_"
-            VarTup (VarTup _ _) curr -> showVar curr
-            otherwise                -> error "Let2 binding not complete"
-
-   var2 = case arr2V of
-            VarTup (VarUnit)  curr -> showVar curr
-            VarTup (VarTup _ curr) _ -> "_"
-            otherwise                -> error "Let2 binding not complete"
-
-   returnVars = case arr2V of
-            VarUnit      -> VarUnit
-            VarTup vs _c -> case vs of
-                              VarUnit       -> VarUnit
-                              VarTup vs' _c -> vs'
+   var1 = "y" ++ (show letLevel)
+   var2 = "y" ++ (show (letLevel + 1))
    returnString = "let (" ++ var1 ++ ", " ++ var2 ++ ") = (" ++ arr1S
                           ++ ") in " ++ arr2S
 
 
 --TODO: Need better handling of variables being passed from either side of tuple
-evalPreOpenAcc (PairArrays acc1 acc2) aenv
- = RepaParsed arr2 $ "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
+evalPreOpenAcc (PairArrays acc1 acc2) letLevel aenv
+ = RepaParsed returnString
  where
-   RepaParsed _arr1 arr1S = evalOpenAcc acc1 aenv
-   RepaParsed arr2 arr2S = evalOpenAcc acc2 aenv
+   returnString     = "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
+   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2S = evalOpenAcc acc2 letLevel aenv
 
 
-evalPreOpenAcc (Avar idx) aenv
- = RepaParsed allVars var
+evalPreOpenAcc (Avar idx) letLevel _aenv
+ = RepaParsed var
  where
-   var    = "y" ++ varNum
-   varNum = show $ getVarNum idx
-   allVars = genVars idx
+   var    = "y" ++ show (letLevel - varNum - 1)
+   varNum = getVarNum idx
 
 
-evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _aenv
+evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _letLevel _aenv
  = error "Apply"
-evalPreOpenAcc (Apply _afun _acc) _aenv
+evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
    = error "GHC pattern matching does not detect that this case is impossible"
 
 
-evalPreOpenAcc (Acond _cond _acc1 _acc2) _aenv
+evalPreOpenAcc (Acond _cond _acc1 _acc2) _letLevel _aenv
  = error "Acond"
 
 -- TODO
-evalPreOpenAcc (Use arr) _aenv
- = RepaParsed VarUnit "use"
+evalPreOpenAcc (Use arr) _letLevel _aenv
+ = RepaParsed "use"
 
 
-evalPreOpenAcc (Unit e) aenv
- = RepaParsed VarUnit expS
+evalPreOpenAcc (Unit e) _letLevel aenv
+ = RepaParsed expS
  where
    expS = evalExp e aenv
 
 
-evalPreOpenAcc (Reshape e acc) aenv
- = RepaParsed returnVars returnString
+evalPreOpenAcc (Reshape e acc) letLevel aenv
+ = RepaParsed returnString
  where
-   RepaParsed returnVars arrS = evalOpenAcc acc aenv
-
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
    returnString = "reshape (" ++ (evalExp e aenv) ++ ") (" ++ arrS ++ ")"
 
 
-evalPreOpenAcc (Generate sh f) aenv
- = RepaParsed VarUnit returnString
+evalPreOpenAcc (Generate sh f) _letLevel aenv
+ = RepaParsed returnString
  where
-   expS                   = evalExp sh aenv
-   RepaParsed funVar funS = evalFun f aenv
-   returnString           = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
+   expS            = evalExp sh aenv
+   RepaParsed funS = evalFun f aenv
+   returnString    = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
 
 
-evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _aenv
+evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel _aenv
  = error "Replicate"
 
 
-evalPreOpenAcc (Index _sliceIndex _acc _slix) _aenv
+evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
  = error "Index"
 
 
-evalPreOpenAcc (Map f acc) aenv
- = RepaParsed (error "no map computation") ("map " ++ funS ++ " " ++ arrS)
+evalPreOpenAcc (Map f acc) letLevel aenv
+ = RepaParsed ("map " ++ funS ++ " " ++ arrS)
  where
-   RepaParsed _fun funS = evalFun     f   aenv
-   RepaParsed _arr arrS = evalOpenAcc acc aenv
+   RepaParsed funS = evalFun     f   aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
 
 
-evalPreOpenAcc (ZipWith f acc1 acc2) aenv
- = RepaParsed VarUnit "ZipWith"
+evalPreOpenAcc (ZipWith f acc1 acc2) _letLevel _aenv
+ = RepaParsed "ZipWith"
 -- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
 --                                ++ " " ++ (evalOpenAcc acc2 aenv)
 
 
-evalPreOpenAcc (Fold f e acc) aenv
+evalPreOpenAcc (Fold f e acc) _letLevel aenv
 -- = "fold " ++ evalFun     f   aenv ++ " "
 --           ++ evalExp e   aenv ++ " "
 --           ++ evalOpenAcc acc aenv
  = error "fold"
 
 
-evalPreOpenAcc (Fold1 _f _acc) _aenv
+evalPreOpenAcc (Fold1 _f _acc) _letLevel _aenv
  = error "Fold1"
 
 
-evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _aenv
+evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel _aenv
  = error "FoldSeg"
 
 
-evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _aenv
+evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel _aenv
  = error "Fold1Seg"
 
 
-evalPreOpenAcc (Scanl _f _e _acc) _aenv
+evalPreOpenAcc (Scanl _f _e _acc) _letLevel _aenv
  = error "Scanl"
 
 
-evalPreOpenAcc (Scanl' _f _e _acc) _aenv
+evalPreOpenAcc (Scanl' _f _e _acc) _letLevel _aenv
  = error "Scanl'"
 
 
-evalPreOpenAcc (Scanl1 _f _acc) _aenv
+evalPreOpenAcc (Scanl1 _f _acc) _letLevel _aenv
  = error "Scanl1"
 
 
-evalPreOpenAcc (Scanr _f _e _acc) _aenv
+evalPreOpenAcc (Scanr _f _e _acc) _letLevel _aenv
  = error "Scanr"
 
 
-evalPreOpenAcc (Scanr' _f _e _acc) _aenv
+evalPreOpenAcc (Scanr' _f _e _acc) _letLevel _aenv
  = error "Scanr'"
 
 
-evalPreOpenAcc (Scanr1 _f _acc) _aenv
+evalPreOpenAcc (Scanr1 _f _acc) _letLevel _aenv
  = error "Scanr1"
 
 
-evalPreOpenAcc (Permute _f _dftAcc _p _acc) _aenv
+evalPreOpenAcc (Permute _f _dftAcc _p _acc) _letLevel _aenv
  = error "Permute"
 
 
-evalPreOpenAcc (Backpermute _e _p _acc) _aenv
+evalPreOpenAcc (Backpermute _e _p _acc) _letLevel _aenv
  = error "Backpermute"
 
 
-evalPreOpenAcc (Stencil _sten _bndy _acc) _aenv
+evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel _aenv
  = error "Stencil"
 
 
-evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _aenv
+evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel _aenv
  = error "Stencil2"
 
 
-evalPreOpenAcc _ _ = error "Not yet implemented"
+evalPreOpenAcc _ _ _ = error "Not yet implemented"
 
 
 
