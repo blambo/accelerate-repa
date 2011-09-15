@@ -121,10 +121,13 @@ evalPreOpenAcc (Map f acc) letLevel aenv
    RepaParsed arrS = evalOpenAcc acc letLevel aenv
 
 
-evalPreOpenAcc (ZipWith f acc1 acc2) _letLevel _aenv
- = RepaParsed "ZipWith"
--- = "zipwith " ++ evalFun f aenv ++ " " ++ (evalOpenAcc acc1 aenv)
---                                ++ " " ++ (evalOpenAcc acc2 aenv)
+evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
+ = RepaParsed s
+ where
+   s = "zipwith (" ++ funS ++ ") (" ++ arr1S ++ ") (" ++ arr2S ++ ")"
+   RepaParsed funS  = evalFun f aenv
+   RepaParsed arr1S = (evalOpenAcc acc1 letLevel aenv) 
+   RepaParsed arr2S = (evalOpenAcc acc2 letLevel aenv) 
 
 
 evalPreOpenAcc (Fold f e acc) _letLevel aenv
