@@ -130,11 +130,13 @@ evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
    RepaParsed arr2S = (evalOpenAcc acc2 letLevel aenv) 
 
 
-evalPreOpenAcc (Fold f e acc) _letLevel aenv
--- = "fold " ++ evalFun     f   aenv ++ " "
---           ++ evalExp e   aenv ++ " "
---           ++ evalOpenAcc acc aenv
- = error "fold"
+evalPreOpenAcc (Fold f e acc) letLevel aenv
+ = RepaParsed returnS
+ where
+   returnS         = "fold (" ++ funS ++ ") (" ++ expS ++ ") (" ++ arrS ++ ")"
+   RepaParsed funS = evalFun     f            aenv
+   expS            = evalExp     e            aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
 
 
 evalPreOpenAcc (Fold1 _f _acc) _letLevel _aenv
