@@ -34,7 +34,6 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 -- | Traverses over AST
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> Val aenv -> RepaParsed a
 
--- TODO
 evalPreOpenAcc (Let acc1 acc2) letLevel aenv
  = RepaParsed returnString
  where
@@ -44,9 +43,6 @@ evalPreOpenAcc (Let acc1 acc2) letLevel aenv
    returnString = "let y" ++ (show letLevel) ++ " = (" ++ arr1S ++ ") in " ++ arr2S
 
 
--- Uses somewhat dodgy method of variable naming, based on knowledge that the
--- Smart module will name variables in specific way depending if fstA or sndA is
--- called
 evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
  = RepaParsed returnString
  where
@@ -60,7 +56,6 @@ evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
                           ++ ") in " ++ arr2S
 
 
---TODO: Need better handling of variables being passed from either side of tuple
 evalPreOpenAcc (PairArrays acc1 acc2) letLevel aenv
  = RepaParsed returnString
  where
