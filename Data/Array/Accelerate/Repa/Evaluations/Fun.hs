@@ -19,14 +19,13 @@ import Data.Array.Accelerate.Repa.Evaluations.Exp
 import Data.Array.Accelerate.Repa.RepaParsed
 
 evalFun :: Fun aenv t -> Val aenv -> RepaParsed t
-evalFun f aenv = evalOpenFun f Empty aenv
+evalFun f aenv = evalOpenFun f 0 Empty aenv
 
-evalOpenFun :: OpenFun env aenv t -> Val env -> Val aenv -> RepaParsed t
-evalOpenFun (Body e) env aenv
--- = "<BodyFun>"
- = RepaParsed $ evalOpenExp e env aenv
--- = error "BodyFun"
-evalOpenFun (Lam f)  env aenv
- = RepaParsed ("\\x -> " ++ funS)
+evalOpenFun :: OpenFun env aenv t -> Int -> Val env -> Val aenv -> RepaParsed t
+evalOpenFun (Body e) lamLevel env aenv
+ = RepaParsed $ evalOpenExp e lamLevel env aenv
+evalOpenFun (Lam f)  lamLevel env aenv
+ = RepaParsed ("\\" ++ varName ++ " -> " ++ funS)
  where
-   RepaParsed funS = evalOpenFun f (env `Push` (error "Lam")) aenv
+   RepaParsed funS = evalOpenFun f (lamLevel+1) (env `Push` (error "Lam")) aenv
+   varName = "x" ++ (show lamLevel)
