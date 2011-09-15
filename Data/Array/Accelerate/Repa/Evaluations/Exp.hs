@@ -42,7 +42,11 @@ evalOpenExp IndexNil _env _aenv
 
 evalOpenExp (IndexCons sh i) env aenv 
    = (evalOpenExp sh env aenv) ++ " :. ("
-     ++ (evalOpenExp i env aenv) ++ " :: Int)"
+     ++ (evalOpenExp i env aenv) ++ suffix
+   where
+      suffix = case i of
+                  Const _   -> " :: Int)"
+                  otherwise -> ")"
 
 evalOpenExp (IndexHead ix) env aenv 
    = "IndexHead"
