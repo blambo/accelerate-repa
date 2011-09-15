@@ -17,90 +17,85 @@ import Data.Array.Accelerate.AST
 evalPrimConst :: PrimConst a -> String
 evalPrimConst _ = "PrimConst"
 
-evalPrim :: forall a. a -> String
-evalPrim _ = "prim"
+evalPrim :: PrimFun p -> String -> String
 
---evalPrim :: PrimFun (a->r) -> String
---evalPrim _ = "prim"
+evalPrim (PrimAdd ty) s = "( (fst " ++ s ++ ") + (snd " ++ s ++ ") )"
 
---evalPrim (PrimAdd ty) = "add"
-{-
-evalPrim (PrimSub ty) = "sub"
+evalPrim (PrimSub ty) s = "sub"
 
-evalPrim (PrimMul ty) = "mul"
+evalPrim (PrimMul ty) s = "mul"
 
-evalPrim (PrimNeg ty) = "neg"
+evalPrim (PrimNeg ty) s = "neg"
 
-evalPrim (PrimAbs ty) = "abs"
+evalPrim (PrimAbs ty) s = "abs"
 
-evalPrim (PrimSig ty) = "sig"
+evalPrim (PrimSig ty) s = "sig"
 
-evalPrim (PrimQuot ty) = "quot"
+evalPrim (PrimQuot ty) s = "quot"
 
-evalPrim (PrimRem ty) = "rem"
+evalPrim (PrimRem ty) s = "rem"
 
-evalPrim (PrimIDiv ty) = "idiv"
+evalPrim (PrimIDiv ty) s = "idiv"
 
-evalPrim (PrimMod ty) = "mod"
+evalPrim (PrimMod ty) s = "mod"
 
-evalPrim (PrimBAnd ty) = "bAnd"
+evalPrim (PrimBAnd ty) s = "bAnd"
 
-evalPrim (PrimBOr ty) = "bOr"
+evalPrim (PrimBOr ty) s = "bOr"
 
-evalPrim (PrimBXor ty) = "bXor"
+evalPrim (PrimBXor ty) s = "bXor"
 
-evalPrim (PrimBNot ty) = "bNot"
+evalPrim (PrimBNot ty) s = "bNot"
 
-evalPrim (PrimBShiftL ty) = "bShiftl"
+evalPrim (PrimBShiftL ty) s = "bShiftl"
 
-evalPrim (PrimBShiftR ty) = "bShiftr"
+evalPrim (PrimBShiftR ty) s = "bShiftr"
 
-evalPrim (PrimBRotateL ty) = "bRotatel"
+evalPrim (PrimBRotateL ty) s = "bRotatel"
 
-evalPrim (PrimBRotateR ty) = "bRotater"
+evalPrim (PrimBRotateR ty) s = "bRotater"
 
-evalPrim (PrimFDiv ty) = "fdiv"
+evalPrim (PrimFDiv ty) s = "fdiv"
 
-evalPrim (PrimRecip ty) = "recip"
+evalPrim (PrimRecip ty) s = "recip"
 
-evalPrim (PrimSin ty) = "sin"
+evalPrim (PrimSin ty) s = "sin"
 
-evalPrim (PrimCos ty) = "cos"
+evalPrim (PrimCos ty) s = "cos"
 
-evalPrim (PrimTan ty) = "tan"
+evalPrim (PrimTan ty) s = "tan"
 
-evalPrim (PrimAsin ty) = "asin"
+evalPrim (PrimAsin ty) s = "asin"
 
-evalPrim (PrimAcos ty) = "acos"
+evalPrim (PrimAcos ty) s = "acos"
 
-evalPrim (PrimAtan ty) = "atan"
+evalPrim (PrimAtan ty) s = "atan"
 
-evalPrim (PrimAsinh ty) = "asinh"
-evalPrim (PrimAcosh ty) = "acosh"
-evalPrim (PrimAtanh ty) = "atanh"
-evalPrim (PrimExpFloating ty) = "expfloating"
-evalPrim (PrimSqrt ty) = "sqrt"
-evalPrim (PrimLog ty) = "log"
-evalPrim (PrimFPow ty) = "fpow"
-evalPrim (PrimLogBase ty) = "logbase"
-evalPrim (PrimTruncate ta tb) = "truncate"
-evalPrim (PrimRound ta tb) = "round"
-evalPrim (PrimFloor ta tb) = "floor"
-evalPrim (PrimCeiling ta tb) = "ceiling"
-evalPrim (PrimAtan2 ty) = "atan2"
-evalPrim (PrimLt ty) = "lt"
-evalPrim (PrimGt ty) = "gt"
-evalPrim (PrimLtEq ty) = "lteq"
-evalPrim (PrimGtEq ty) = "gteq"
-evalPrim (PrimEq ty) = "eq"
-evalPrim (PrimNEq ty) = "neq"
-evalPrim (PrimMax ty) = "max"
-evalPrim (PrimMin ty) = "min"
-evalPrim (PrimLAnd) = "lAnd"
-evalPrim (PrimLOr) = "lOr"
-evalPrim (PrimLNot) = "lNot"
-evalPrim (PrimOrd) = "ord"
-evalPrim (PrimChr) = "chr"
-evalPrim (PrimBoolToInt) = "booltoint"
-evalPrim (PrimFromIntegral ta tb) = "fromIntegral"
--}
+evalPrim (PrimAsinh ty) s = "asinh"
+evalPrim (PrimAcosh ty) s = "acosh"
+evalPrim (PrimAtanh ty) s = "atanh"
+evalPrim (PrimExpFloating ty) s = "expfloating"
+evalPrim (PrimSqrt ty) s = "sqrt"
+evalPrim (PrimLog ty) s = "log"
+evalPrim (PrimFPow ty) s = "fpow"
+evalPrim (PrimLogBase ty) s = "logbase"
+evalPrim (PrimTruncate ta tb) s = "truncate"
+evalPrim (PrimRound ta tb) s = "round"
+evalPrim (PrimFloor ta tb) s = "floor"
+evalPrim (PrimCeiling ta tb) s = "ceiling"
+evalPrim (PrimAtan2 ty) s = "atan2"
+evalPrim (PrimLt ty) s = "lt"
+evalPrim (PrimGt ty) s = "gt"
+evalPrim (PrimLtEq ty) s = "lteq"
+evalPrim (PrimGtEq ty) s = "gteq"
+evalPrim (PrimEq ty) s = "eq"
+evalPrim (PrimNEq ty) s = "neq"
+evalPrim (PrimMax ty) s = "max"
+evalPrim (PrimMin ty) s = "min"
+evalPrim (PrimLAnd) s = "lAnd"
+evalPrim (PrimLOr) s = "lOr"
+evalPrim (PrimLNot) s = "lNot"
+evalPrim (PrimOrd) s = "ord"
+evalPrim (PrimChr) s = "chr"
+evalPrim (PrimBoolToInt) s = "booltoint"
+evalPrim (PrimFromIntegral ta tb) s = "fromIntegral"
