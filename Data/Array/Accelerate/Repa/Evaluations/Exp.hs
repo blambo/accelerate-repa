@@ -17,6 +17,7 @@ module Data.Array.Accelerate.Repa.Evaluations.Exp
 
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
+import Data.Array.Accelerate.Tuple
 
 import Data.Array.Accelerate.Repa.Evaluations.Prim
 
@@ -31,7 +32,7 @@ evalOpenExp (Const c) _ _
    = show ((Sugar.toElt c) :: a)
 
 evalOpenExp (Tuple tup) env aenv 
-   = "Tuple"
+   = evalTuple tup env aenv
 
 evalOpenExp (Prj idx e) env aenv 
    = "Prj"
@@ -59,7 +60,9 @@ evalOpenExp (PrimConst c) _ _
    = "PrimConst"
 
 evalOpenExp (PrimApp p arg) env aenv 
-   = "PrimApp " ++ (evalPrim p) ++ (evalOpenExp arg env aenv)
+   = evalPrim p argS
+   where
+      argS = evalOpenExp arg env aenv
 
 evalOpenExp (IndexScalar acc ix) env aenv 
    = "IndexScalar"
@@ -75,6 +78,14 @@ evalOpenExp (Size acc) _ aenv
 evalExp :: PreExp OpenAcc aenv t -> Val aenv -> String
 evalExp e aenv = evalOpenExp e Empty aenv
 
---evalPrim :: forall a. a -> String
---evalPrim _ = "prim"
+evalTuple :: Tuple (OpenExp env aenv) t -> Val env -> Val aenv -> String
+evalTuple tup env aenv = "(" ++ evalTuple' tup env aenv ++ ")"
 
+evalTuple' :: Tuple (OpenExp env aenv) t1 -> Val env -> Val aenv -> String
+evalTuple' NilTup _env _aenv = ""
+evalTuple' (e1 `SnocTup` e2) env aenv
+   = case tupS of
+      ""        -> evalOpenExp e2 env aenv
+      otherwise -> tupS ++ ", " ++ evalOpenExp e2 env aenv
+   where
+      tupS = evalTuple' e1 env aenv
