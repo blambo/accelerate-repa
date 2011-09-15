@@ -24,4 +24,5 @@ Library
                     Data.Array.Accelerate.Repa.Evaluations.Acc
                     Data.Array.Accelerate.Repa.Evaluations.Fun
                     Data.Array.Accelerate.Repa.Evaluations.Exp
+                    Data.Array.Accelerate.Repa.Evaluations.Prim
                     Data.Array.Accelerate.Repa.RepaParsed
