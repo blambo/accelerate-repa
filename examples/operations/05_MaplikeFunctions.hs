@@ -5,7 +5,7 @@ main :: IO ()
 main = do
    --map
    putStrLn "---MAP---"
-   putStrLn $ Repa.run $ Acc.map (\x -> x) $ use $ fromList Z [3::Int]
+   putStrLn $ Repa.run $ Acc.map (id) $ use $ fromList Z [3::Int]
    putStrLn $ Repa.run $ Acc.map (\x -> x + 1) $ generate (index1 5) (\_ -> constant (3 :: Int))
    --zipwith
    putStrLn "---ZIPWITH---"
