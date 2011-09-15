@@ -45,7 +45,7 @@ main = do
    -- fstA and sndA
    putStrLn "---FSTA and SNDA---"
    putStrLn $ Repa.run
-            $ fstA $ pairA (sndA $ pairA testArr testArr) (sndA $ pairA testArr testArr)
+            $ fstA $ pairA (sndA $ pairA testArr testArr) (fstA $ pairA testArr testArr)
 
 testArr :: Acc (Array Z Int)
 testArr = generate index0 (\x -> constant 0)
