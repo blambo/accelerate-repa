@@ -15,7 +15,11 @@ module Data.Array.Accelerate.Repa.Evaluations.Prim
 import Data.Array.Accelerate.AST
 
 evalPrimConst :: PrimConst a -> String
-evalPrimConst _ = "PrimConst"
+
+evalPrimConst (PrimMinBound ty) = "minBound"
+evalPrimConst (PrimMaxBound ty) = "maxBound"
+evalPrimConst (PrimPi       ty) = "pi"
+
 
 evalPrim :: PrimFun p -> String -> String
 
