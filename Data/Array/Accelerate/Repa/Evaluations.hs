@@ -171,11 +171,11 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
 
    returnString    = "traverse (" ++ arrS ++ ")" ++ " (\\(Z:.i) -> (Z:.(i+1))) "
                    ++ "(let newVal (origVal) (Z:.pos) "
-                   ++ "| pos == 0 = " ++ expS ++ " ; "
+                   ++ "| pos == 0 = " ++ expS ++ " "
                    ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
                                              "(newVal origVal (Z:.(pos-1))) " ++
-                                             "(origVal (Z:.(pos-1)))"
-
+                                             "(origVal (Z:.(pos-1))) "
+                   ++ "in newVal)"
 
 --TODO
 evalPreOpenAcc (Scanl' _f _e _acc) _letLevel _aenv
