@@ -96,8 +96,9 @@ evalPreOpenAcc (Use arr) _letLevel _aenv
 
 
 evalPreOpenAcc (Unit e) letLevel aenv
- = RepaParsed expS
+ = RepaParsed returnString
  where
+   returnString = "fromList Z [" ++ expS ++ "]"
    expS = evalExp e letLevel aenv
 
 
