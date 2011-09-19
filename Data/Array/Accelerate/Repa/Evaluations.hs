@@ -20,6 +20,11 @@ import Data.Array.Accelerate.Tuple
 import Data.Array.Accelerate.Repa.Evaluations.Prim
 import Data.Array.Accelerate.Repa.RepaParsed
 
+
+---------------
+-- ACC NODES --
+---------------
+
 evalAcc :: Acc a -> String
 evalAcc acc
  = parsedS
@@ -104,11 +109,11 @@ evalPreOpenAcc (Generate sh f) letLevel aenv
    RepaParsed funS = evalFun f letLevel aenv
    returnString    = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
 
-
+--TODO
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel _aenv
  = error "Replicate"
 
-
+--TODO
 evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
  = error "Index"
 
@@ -137,15 +142,15 @@ evalPreOpenAcc (Fold f e acc) letLevel aenv
    expS            = evalExp     e   letLevel aenv
    RepaParsed arrS = evalOpenAcc acc letLevel aenv
 
-
+--TODO
 evalPreOpenAcc (Fold1 _f _acc) _letLevel _aenv
  = error "Fold1"
 
-
+--TODO
 evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel _aenv
  = error "FoldSeg"
 
-
+--TODO
 evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel _aenv
  = error "Fold1Seg"
 
@@ -165,46 +170,48 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
                                              "(origVal (Z:.(pos-1)))"
 
 
+--TODO
 evalPreOpenAcc (Scanl' _f _e _acc) _letLevel _aenv
  = error "Scanl'"
 
-
+--TODO
 evalPreOpenAcc (Scanl1 _f _acc) _letLevel _aenv
  = error "Scanl1"
 
-
+--TODO
 evalPreOpenAcc (Scanr _f _e _acc) _letLevel _aenv
  = error "Scanr"
 
-
+--TODO
 evalPreOpenAcc (Scanr' _f _e _acc) _letLevel _aenv
  = error "Scanr'"
 
-
+--TODO
 evalPreOpenAcc (Scanr1 _f _acc) _letLevel _aenv
  = error "Scanr1"
 
-
+--TODO
 evalPreOpenAcc (Permute _f _dftAcc _p _acc) _letLevel _aenv
  = error "Permute"
 
-
+--TODO
 evalPreOpenAcc (Backpermute _e _p _acc) _letLevel _aenv
  = error "Backpermute"
 
-
+--TODO
 evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel _aenv
  = error "Stencil"
 
-
+--TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel _aenv
  = error "Stencil2"
 
 
 evalPreOpenAcc _ _ _ = error "Not yet implemented"
 
-
-
+--------------------
+-- FUNCTION NODES --
+--------------------
 
 evalFun :: Fun aenv t -> Int-> Val aenv -> RepaParsed t
 evalFun f letL aenv = evalOpenFun f 0 letL Empty aenv
@@ -218,7 +225,9 @@ evalOpenFun (Lam f)  lamL letL env aenv
    RepaParsed funS = evalOpenFun f (lamL+1) letL (env `Push` (error "Lam")) aenv
    varName = "x" ++ (show lamL)
 
-
+----------------------
+-- EXPRESSION NODES --
+----------------------
 
 -- Evaluate an open expression
 evalOpenExp :: forall a env aenv .
@@ -235,6 +244,7 @@ evalOpenExp (Const c) _ _ _ _
 evalOpenExp (Tuple tup) lamL letL env aenv 
    = evalTuple tup lamL letL env aenv
 
+--TODO
 evalOpenExp (Prj idx e) _lamL _letL env aenv 
    = "Prj"
 
@@ -277,9 +287,11 @@ evalOpenExp (PrimApp p arg) lamL letL env aenv
    where
       argS = evalOpenExp arg lamL letL env aenv
 
+--TODO
 evalOpenExp (IndexScalar acc ix) lamL letL env aenv 
    = "IndexScalar"
 
+--TODO
 evalOpenExp (Shape acc) _lamL _letL _env _aenv 
    = "Shape"
 
@@ -293,6 +305,10 @@ evalOpenExp (Size acc) _lamL letL _env aenv
 evalExp :: PreExp OpenAcc aenv t -> Int -> Val aenv -> String
 evalExp e letL aenv = evalOpenExp e 0 letL Empty aenv
 
+------------
+-- TUPLES --
+------------
+
 evalTuple :: Tuple (OpenExp env aenv) t -> Int -> Int -> Val env -> Val aenv -> String
 evalTuple tup lamL letL env aenv = "(" ++ evalTuple' tup lamL letL env aenv ++ ")"
 
@@ -305,13 +321,10 @@ evalTuple' (e1 `SnocTup` e2) lamL letL env aenv
    where
       tupS = evalTuple' e1 lamL letL env aenv
 
+---------------------
+-- VARIABLE HELPER --
+---------------------
 
 getVarNum :: Idx env t -> Int
 getVarNum ZeroIdx = 0
 getVarNum (SuccIdx idx) = 1 + (getVarNum idx)
-
-genVars :: Idx env t -> PossVar
-genVars ZeroIdx = VarTup VarUnit 0
-genVars (SuccIdx idx) = VarTup vs (1 + last)
-                        where
-                           vs@(VarTup _ last) = genVars idx
