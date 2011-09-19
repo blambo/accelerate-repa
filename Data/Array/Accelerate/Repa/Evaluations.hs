@@ -303,7 +303,7 @@ evalOpenExp (Shape acc) _lamL _letL _env _aenv
    = "Shape"
 
 evalOpenExp (Size acc) _lamL letL _env aenv 
-   = "Size"
+   = "Repa.size (" ++ arrS ++ ")"
    where
       RepaParsed arrS = evalOpenAcc acc letL aenv
 
