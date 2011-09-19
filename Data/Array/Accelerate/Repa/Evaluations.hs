@@ -13,6 +13,8 @@ module Data.Array.Accelerate.Repa.Evaluations
    )
    where
 
+import Data.Typeable
+
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 import Data.Array.Accelerate.Tuple
@@ -246,7 +248,10 @@ evalOpenExp (Var idx) lamL letL env _
       varNum = lamL - (getVarNum idx) - 1
 
 evalOpenExp (Const c) _ _ _ _
-   = show ((Sugar.toElt c) :: a)
+   = valS ++ " :: " ++ typeS
+   where
+      valS  = show ((Sugar.toElt c) :: a)
+      typeS = (showsTypeRep $ typeOf ((Sugar.toElt c) :: a)) ""
 
 evalOpenExp (Tuple tup) lamL letL env aenv 
    = evalTuple tup lamL letL env aenv
@@ -260,11 +265,7 @@ evalOpenExp IndexNil _ _ _ _
 
 evalOpenExp (IndexCons sh i) lamL letL env aenv 
    = (evalOpenExp sh lamL letL env aenv) ++ " :. ("
-     ++ (evalOpenExp i lamL letL env aenv) ++ suffix
-   where
-      suffix = case i of
-                  Const _   -> " :: Int)"
-                  otherwise -> ")"
+     ++ (evalOpenExp i lamL letL env aenv) ++ ")"
 
 evalOpenExp (IndexHead ix) lamL letL env aenv 
    = "case (" ++ expS ++ ") of (_:.h) -> h"
