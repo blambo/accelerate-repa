@@ -81,8 +81,14 @@ evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
    = error "GHC pattern matching does not detect that this case is impossible"
 
 
-evalPreOpenAcc (Acond _cond _acc1 _acc2) _letLevel _aenv
- = error "Acond"
+evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
+ = RepaParsed returnString
+ where
+   returnString = "if (" ++ expS ++ ") then (" ++ arr1S ++ ") else (" ++ arr2S ++ ")"
+   expS             = evalExp cond letLevel aenv
+   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2S = evalOpenAcc acc2 letLevel aenv
+
 
 -- TODO
 evalPreOpenAcc (Use arr) _letLevel _aenv
