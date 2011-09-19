@@ -267,12 +267,12 @@ evalOpenExp (IndexCons sh i) lamL letL env aenv
                   otherwise -> ")"
 
 evalOpenExp (IndexHead ix) lamL letL env aenv 
-   = "case (" ++ expS ++ ") of _:.h -> h"
+   = "case (" ++ expS ++ ") of (_:.h) -> h"
    where
       expS = evalOpenExp ix lamL letL env aenv
 
 evalOpenExp (IndexTail ix) lamL letL env aenv 
-   = "case (" ++ expS ++ ") of t:._ -> t"
+   = "case (" ++ expS ++ ") of (t:._) -> t"
    where
       expS = evalOpenExp ix lamL letL env aenv
 
