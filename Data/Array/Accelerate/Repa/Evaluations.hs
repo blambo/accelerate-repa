@@ -163,7 +163,8 @@ evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel _aenv
 evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel _aenv
  = error "Fold1Seg"
 
-
+-- Current generated code will be grossly inefficient, will need to generate more
+-- efficient code later, but currently working
 evalPreOpenAcc (Scanl f e acc) letLevel aenv
  = RepaParsed returnString
  where
@@ -183,9 +184,20 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
 evalPreOpenAcc (Scanl' _f _e _acc) _letLevel _aenv
  = error "Scanl'"
 
---TODO
-evalPreOpenAcc (Scanl1 _f _acc) _letLevel _aenv
- = error "Scanl1"
+evalPreOpenAcc (Scanl1 f acc) letLevel aenv
+ = RepaParsed returnString
+ where
+   RepaParsed funS = evalFun     f   letLevel aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+
+   returnString    = "traverse (" ++ arrS ++ ")" ++ " (id) "
+                   ++ "(let newVal (origVal) sh@(Z:.pos) "
+                   ++ "| pos == 0 = origVal sh "
+                   ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
+                                             "(newVal origVal (Z:.(pos-1))) " ++
+                                             "(origVal (Z:.pos)) "
+                   ++ "in newVal)"
+
 
 --TODO
 evalPreOpenAcc (Scanr _f _e _acc) _letLevel _aenv
