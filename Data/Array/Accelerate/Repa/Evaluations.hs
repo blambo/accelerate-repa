@@ -215,17 +215,40 @@ evalPreOpenAcc (Scanl1 f acc) letLevel aenv
                    ++ "in newVal)"
 
 
---TODO
-evalPreOpenAcc (Scanr _f _e _acc) _letLevel _aenv
- = error "Scanr"
+evalPreOpenAcc (Scanr f e acc) letLevel aenv
+ = RepaParsed returnString
+ where
+   RepaParsed funS = evalFun     f   letLevel aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   expS            = evalExp     e   letLevel aenv
+
+   returnString    = "traverse (" ++ arrS ++ ")" ++ " (\\(Z:.i) -> (Z:.(i+1))) "
+                   ++ "(let last = (size $ extent $ " ++ arrS ++ ") in "
+                   ++ "(let newVal (origVal) (Z:.pos) "
+                   ++ "| pos == last = " ++ expS ++ " "
+                   ++ "| otherwise = " ++ "(" ++ funS ++ ") " ++
+                                             "(newVal origVal (Z:.(pos+1))) " ++
+                                             "(origVal (Z:.pos)) "
+                   ++ "in newVal))"
 
 --TODO
 evalPreOpenAcc (Scanr' _f _e _acc) _letLevel _aenv
  = error "Scanr'"
 
---TODO
-evalPreOpenAcc (Scanr1 _f _acc) _letLevel _aenv
- = error "Scanr1"
+evalPreOpenAcc (Scanr1 f acc) letLevel aenv
+ = RepaParsed returnString
+ where
+   RepaParsed funS = evalFun     f   letLevel aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+
+   returnString    = "traverse (" ++ arrS ++ ")" ++ " (id) "
+                   ++ "(let last = (size $ extent $ " ++ arrS ++ ") - 1 in "
+                   ++ "(let newVal (origVal) sh@(Z:.pos) "
+                   ++ "| pos == last = origVal sh"
+                   ++ "| otherwise = " ++ "(" ++ funS ++ ") " ++
+                                             "(newVal origVal (Z:.(pos+1))) " ++
+                                             "(origVal (Z:.pos)) "
+                   ++ "in newVal))"
 
 --TODO
 evalPreOpenAcc (Permute _f _dftAcc _p _acc) _letLevel _aenv
