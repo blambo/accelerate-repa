@@ -214,7 +214,6 @@ evalPreOpenAcc (Scanl1 f acc) letLevel aenv
                                              "(origVal (Z:.pos)) "
                    ++ "in newVal)"
 
-
 evalPreOpenAcc (Scanr f e acc) letLevel aenv
  = RepaParsed returnString
  where
@@ -231,9 +230,24 @@ evalPreOpenAcc (Scanr f e acc) letLevel aenv
                                              "(origVal (Z:.pos)) "
                    ++ "in newVal))"
 
---TODO
-evalPreOpenAcc (Scanr' _f _e _acc) _letLevel _aenv
- = error "Scanr'"
+evalPreOpenAcc (Scanr' f e acc) letLevel aenv
+ = RepaParsed returnString
+ where
+   returnString       = "(" ++ firstS ++ ", " ++ secondS ++ ")"
+
+   firstS          = "traverse (" ++ arrS ++ ")" ++ " (id) "
+                   ++ "(let last = (size $ extent $ " ++ arrS ++ ") - 1 in "
+                   ++ "(let newVal (origVal) (Z:.pos) "
+                   ++ "| pos == last = " ++ expS ++ " "
+                   ++ "| otherwise = " ++ "(" ++ funS ++ ") " ++
+                                             "(newVal origVal (Z:.(pos+1))) " ++
+                                             "(origVal (Z:.pos)) "
+                   ++ "in newVal))"
+   secondS         = "fold (" ++ funS ++ ") (" ++ expS ++ ") (" ++ arrS ++ ")"
+
+   RepaParsed funS = evalFun     f   letLevel aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   expS            = evalExp     e   letLevel aenv
 
 evalPreOpenAcc (Scanr1 f acc) letLevel aenv
  = RepaParsed returnString

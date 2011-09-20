@@ -18,8 +18,8 @@ main = do
    putStrLn $ Repa.run $ Acc.scanr (+) (constant (0 :: Int)) $ generate (index1 10) (\_ -> 1)
    --scanr
    putStrLn "---SCANR'---"
-   --putStrLn $ Repa.run $ fst $ Acc.scanr' (+) (constant (0 :: Int)) $ generate (index1 10) (\_ -> 1)
-   --putStrLn $ Repa.run $ snd $ Acc.scanr' (+) (constant (0 :: Int)) $ generate (index1 10) (\_ -> 1)
+   putStrLn $ Repa.run $ fst $ Acc.scanr' (+) (constant (0 :: Int)) $ generate (index1 10) (\_ -> 1)
+   putStrLn $ Repa.run $ snd $ Acc.scanr' (+) (constant (0 :: Int)) $ generate (index1 10) (\_ -> 1)
    --scanr1
    putStrLn "---SCANR1---"
    putStrLn $ Repa.run $ Acc.scanr1 (+) $ generate (index1 10) (\_ -> constant (1 :: Int))
