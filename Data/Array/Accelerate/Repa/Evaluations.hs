@@ -180,9 +180,25 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
                                              "(origVal (Z:.(pos-1))) "
                    ++ "in newVal)"
 
---TODO
-evalPreOpenAcc (Scanl' _f _e _acc) _letLevel _aenv
- = error "Scanl'"
+-- Generated code is quite inefficient due to repeated computations
+evalPreOpenAcc (Scanl' f e acc) letLevel aenv
+ = RepaParsed returnString
+ where
+   returnString       = "(" ++ firstS ++ ", " ++ secondS ++ ")"
+
+   firstS          = "traverse (" ++ arrS ++ ")" ++ " (id) "
+                   ++ "(let newVal (origVal) sh@(Z:.pos) "
+                   ++ "| pos == 0 = " ++ expS ++ " "
+                   ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
+                                             "(newVal origVal (Z:.(pos-1))) " ++
+                                             "(origVal (Z:.(pos-1))) "
+                   ++ "in newVal)"
+   secondS         = "fold (" ++ funS ++ ") (" ++ expS ++ ") (" ++ arrS ++ ")"
+
+   RepaParsed funS = evalFun     f   letLevel aenv
+   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   expS            = evalExp     e   letLevel aenv
+
 
 evalPreOpenAcc (Scanl1 f acc) letLevel aenv
  = RepaParsed returnString
