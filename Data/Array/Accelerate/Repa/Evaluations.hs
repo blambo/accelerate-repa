@@ -128,7 +128,7 @@ evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
 
 
 evalPreOpenAcc (Map f acc) letLevel aenv
- = RepaParsed ("map (" ++ funS ++ ") (" ++ arrS ++ ")")
+ = RepaParsed ("Repa.map (" ++ funS ++ ") (" ++ arrS ++ ")")
  where
    RepaParsed funS = evalFun     f   letLevel aenv
    RepaParsed arrS = evalOpenAcc acc letLevel aenv
@@ -137,7 +137,7 @@ evalPreOpenAcc (Map f acc) letLevel aenv
 evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
  = RepaParsed s
  where
-   s = "zipwith (" ++ funS ++ ") (" ++ arr1S ++ ") (" ++ arr2S ++ ")"
+   s = "Repa.zipWith (" ++ funS ++ ") (" ++ arr1S ++ ") (" ++ arr2S ++ ")"
    RepaParsed funS  = evalFun f letLevel aenv
    RepaParsed arr1S = (evalOpenAcc acc1 letLevel aenv) 
    RepaParsed arr2S = (evalOpenAcc acc2 letLevel aenv) 
