@@ -18,6 +18,7 @@ import Data.Typeable
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 import Data.Array.Accelerate.Tuple
+import qualified Data.Array.Accelerate.Array.Representation as Repr
 
 import Data.Array.Accelerate.Repa.Evaluations.Prim
 import Data.Array.Accelerate.Repa.RepaParsed
@@ -92,9 +93,12 @@ evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
    RepaParsed arr2S = evalOpenAcc acc2 letLevel aenv
 
 
--- TODO
-evalPreOpenAcc (Use arr) _letLevel _aenv
- = RepaParsed "use"
+evalPreOpenAcc (Use arr@(Array sh e)) letLevel aenv
+ = RepaParsed returnS
+ where
+   returnS = "fromList (" ++ shS ++ ") (" ++ arrData ++ ")"
+   shS     = printShape sh
+   arrData = show $ toList arr
 
 
 evalPreOpenAcc (Unit e) letLevel aenv
@@ -401,3 +405,15 @@ evalTuple' (e1 `SnocTup` e2) lamL letL env aenv
 getVarNum :: Idx env t -> Int
 getVarNum ZeroIdx = 0
 getVarNum (SuccIdx idx) = 1 + (getVarNum idx)
+
+------------------
+-- SHAPE STRING --
+------------------
+
+printShape :: Repr.Shape sh => sh -> String
+printShape sh = (printShape' $ Repr.shapeToList sh)
+
+printShape' :: [Int] -> String
+printShape' (x:xs) = (printShape' xs) ++ " :. " ++ (show x)
+printShape' []     = "Z"
+
