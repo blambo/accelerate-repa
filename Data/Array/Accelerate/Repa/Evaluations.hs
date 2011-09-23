@@ -96,9 +96,10 @@ evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
 evalPreOpenAcc (Use arr@(Array sh e)) letLevel aenv
  = RepaParsed returnS
  where
-   returnS = "fromList (" ++ shS ++ ") (" ++ arrData ++ ")"
+   returnS = "fromList (" ++ shS ++ ") (" ++ arrData ++ " :: " ++ listTypeS ++ ")"
    shS     = printShape sh
    arrData = show $ toList arr
+   listTypeS = (showsTypeRep $ typeOf $ toList arr) ""
 
 
 evalPreOpenAcc (Unit e) letLevel aenv
@@ -414,6 +415,6 @@ printShape :: Repr.Shape sh => sh -> String
 printShape sh = (printShape' $ Repr.shapeToList sh)
 
 printShape' :: [Int] -> String
-printShape' (x:xs) = (printShape' xs) ++ " :. " ++ (show x)
+printShape' (x:xs) = (printShape' xs) ++ " :. (" ++ (show x) ++ " :: Int)"
 printShape' []     = "Z"
 
