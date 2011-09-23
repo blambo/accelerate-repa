@@ -30,7 +30,7 @@ headS :: String
 {-# INLINE headS #-}
 headS =
    "import Data.Array.Repa as Repa\n" ++
-   "main = putStrLn $ show $ toList $ "
+   "main = putStrLn $ show $ "
 
 tailS :: String
 {-# INLINE tailS #-}
