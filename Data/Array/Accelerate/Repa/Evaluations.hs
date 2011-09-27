@@ -14,6 +14,7 @@ module Data.Array.Accelerate.Repa.Evaluations
    where
 
 import Data.Typeable
+import Text.PrettyPrint
 
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
@@ -28,7 +29,7 @@ import Data.Array.Accelerate.Repa.RepaParsed
 -- ACC NODES --
 ---------------
 
-evalAcc :: Acc a -> String
+evalAcc :: Acc a -> Doc
 evalAcc acc
  = parsedS
  where
@@ -42,199 +43,252 @@ evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> Val aenv -> RepaParsed a
 
 evalPreOpenAcc (Let acc1 acc2) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed arr1S = evalOpenAcc acc1 letLevel      aenv
-   RepaParsed arr2S = evalOpenAcc acc2 (letLevel+1) (aenv `Push` error "from let")
+   RepaParsed arr1 = evalOpenAcc acc1 letLevel      aenv
+   RepaParsed arr2 = evalOpenAcc acc2 (letLevel+1) (aenv `Push` error "from let")
 
-   returnString = "let y" ++ (show letLevel) ++ " = (" ++ arr1S ++ ") in " ++ arr2S
+   var              = text "y" <> int letLevel
+   returnDoc        = text "let" <+> var
+                  <+> equals <+> parens arr1
+                   $$ text "in"
+                   $$ nest 1 arr2
 
 
 evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
-   RepaParsed arr2S = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
-                                                          `Push` (error "let2,2"))
-
-   var1 = "y" ++ (show letLevel)
-   var2 = "y" ++ (show (letLevel + 1))
-   returnString = "let (" ++ var1 ++ ", " ++ var2 ++ ") = (" ++ arr1S
-                          ++ ") in " ++ arr2S
+   RepaParsed arr1 = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2 = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
+                                                         `Push` (error "let2,2"))
+   var1            = text "y" <> int letLevel
+   var2            = text "y" <> int (letLevel + 1)
+   returnDoc       = text "let" <+> parens (var1 <> comma <+> var2)
+                 <+> equals
+                  $$ (nest 1 arr1)
+                  $$ text "in"
+                  $$ nest 1 arr2
 
 
 evalPreOpenAcc (PairArrays acc1 acc2) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   returnString     = "( (" ++ arr1S ++ "), (" ++ arr2S ++ ") )"
-   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
-   RepaParsed arr2S = evalOpenAcc acc2 letLevel aenv
+   RepaParsed arr1 = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2 = evalOpenAcc acc2 letLevel aenv
+
+   returnDoc       = parens (parens arr1 <> comma <+> parens arr2)
 
 
 evalPreOpenAcc (Avar idx) letLevel _aenv
  = RepaParsed var
  where
-   var    = "y" ++ show (letLevel - varNum - 1)
+   var    = text "y" <> int (letLevel - varNum - 1)
    varNum = getVarNum idx
 
 
+-- TODO
 evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _letLevel _aenv
- = error "Apply"
+ = RepaParsed $ text "<ERROR:Apply>"
 evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
-   = error "GHC pattern matching does not detect that this case is impossible"
+ = error "GHC pattern matching does not detect that this case is impossible"
 
 
 evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   returnString = "if (" ++ expS ++ ") then (" ++ arr1S ++ ") else (" ++ arr2S ++ ")"
-   expS             = evalExp cond letLevel aenv
-   RepaParsed arr1S = evalOpenAcc acc1 letLevel aenv
-   RepaParsed arr2S = evalOpenAcc acc2 letLevel aenv
+   exp             = evalExp cond letLevel aenv
+   RepaParsed arr1 = evalOpenAcc acc1 letLevel aenv
+   RepaParsed arr2 = evalOpenAcc acc2 letLevel aenv
+
+   returnDoc       = text "if" <+> exp
+                  $$ text "then" $$ (nest 1 arr1)
+                  $$ text "else" $$ (nest 1 arr2)
+
 
 
 evalPreOpenAcc (Use arr@(Array sh e)) letLevel aenv
- = RepaParsed returnS
+ = RepaParsed returnDoc
  where
-   returnS = "fromList (" ++ shS ++ ") (" ++ arrData ++ " :: " ++ listTypeS ++ ")"
-   shS     = printShape sh
-   arrData = show $ toList arr
-   listTypeS = (showsTypeRep $ typeOf $ toList arr) ""
+   shS       = printShape sh
+   arrL      = toList arr
+   arrData   = text $ show $ arrL
+   listType  = text $ (showsTypeRep $ typeOf $ arrL) ""
+
+   returnDoc = text "fromList"
+           <+> parens shS
+           <+> parens (arrData <+> colon <> colon <+> listType)
 
 
 evalPreOpenAcc (Unit e) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   returnString = "fromList Z [" ++ expS ++ "]"
-   expS = evalExp e letLevel aenv
+   exp       = evalExp e letLevel aenv
+   returnDoc = text "fromList Z" <+> brackets exp
 
 
 evalPreOpenAcc (Reshape e acc) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
-   returnString = "reshape (" ++ (evalExp e letLevel aenv) ++ ") (" ++ arrS ++ ")"
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+   exp            = evalExp e letLevel aenv
+
+   returnDoc      = text "reshape" <+> parens exp <+> parens arr
 
 
 evalPreOpenAcc (Generate sh f) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   expS            = evalExp sh letLevel aenv
-   RepaParsed funS = evalFun f letLevel aenv
-   returnString    = "fromFunction (" ++ expS ++ ") (" ++ funS ++ ")"
+   exp            = evalExp sh letLevel aenv
+   RepaParsed fun = evalFun f letLevel aenv
+
+   returnDoc      = text "fromFunction"
+                <+> parens exp
+                <+> parens fun
+
 
 --TODO
 evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel _aenv
- = error "Replicate"
+ = RepaParsed $ text "<ERROR:Replicate>"
+
 
 --TODO
 evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
- = error "Index"
+ = RepaParsed $ text "<ERROR:Index>"
 
 
 evalPreOpenAcc (Map f acc) letLevel aenv
- = RepaParsed ("Repa.map (" ++ funS ++ ") (" ++ arrS ++ ")")
+ = RepaParsed returnDoc
  where
-   RepaParsed funS = evalFun     f   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   RepaParsed fun = evalFun     f   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+
+   returnDoc      = text "Repa.map"
+                <+> parens fun
+                <+> parens arr
 
 
 evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
- = RepaParsed s
+ = RepaParsed returnDoc
  where
-   s = "Repa.zipWith (" ++ funS ++ ") (" ++ arr1S ++ ") (" ++ arr2S ++ ")"
-   RepaParsed funS  = evalFun f letLevel aenv
-   RepaParsed arr1S = (evalOpenAcc acc1 letLevel aenv) 
-   RepaParsed arr2S = (evalOpenAcc acc2 letLevel aenv) 
+   RepaParsed fun  = evalFun f letLevel aenv
+   RepaParsed arr1 = (evalOpenAcc acc1 letLevel aenv) 
+   RepaParsed arr2 = (evalOpenAcc acc2 letLevel aenv) 
+
+   returnDoc       = text "Repa.zipWith"
+                 <+> parens fun
+                 <+> parens arr1
+                 <+> parens arr2
 
 
 evalPreOpenAcc (Fold f e acc) letLevel aenv
- = RepaParsed returnS
+ = RepaParsed returnDoc
  where
-   returnS         = "fold (" ++ funS ++ ") (" ++ expS ++ ") (" ++ arrS ++ ")"
-   RepaParsed funS = evalFun     f   letLevel aenv
-   expS            = evalExp     e   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   RepaParsed fun = evalFun     f   letLevel aenv
+   exp            = evalExp     e   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+
+   returnDoc      = text "fold"
+                <+> parens fun
+                <+> parens exp
+                <+> parens arr
+
 
 --TODO
 evalPreOpenAcc (Fold1 _f _acc) _letLevel _aenv
- = error "Fold1"
+ = RepaParsed $ text "<ERROR:Fold1>"
+
 
 --TODO
 evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel _aenv
- = error "FoldSeg"
+ = RepaParsed $ text "<ERROR:FoldSeg>"
+
 
 --TODO
 evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel _aenv
- = error "Fold1Seg"
+ = RepaParsed $ text "<ERROR:Fold1Seg>"
+
 
 -- Current generated code will be grossly inefficient, will need to generate more
 -- efficient code later, but currently working
 evalPreOpenAcc (Scanl f e acc) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed funS = evalFun     f   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
-   expS            = evalExp     e   letLevel aenv
+   RepaParsed fun = evalFun     f   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+   exp            = evalExp     e   letLevel aenv
 
-   returnString    = "traverse (" ++ arrS ++ ")" ++ " (\\(Z:.i) -> (Z:.(i+1))) "
-                   ++ "(let newVal (origVal) (Z:.pos) "
-                   ++ "| pos == 0 = " ++ expS ++ " "
-                   ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
-                                             "(newVal origVal (Z:.(pos-1))) " ++
-                                             "(origVal (Z:.(pos-1))) "
-                   ++ "in newVal)"
+
+   returnDoc      = text "traverse"
+                <+> (parens arr $$ parens shapeDoc $$ parens newValDoc)
+   shapeDoc       = text "\\(Z:.i) -> (Z:.(i+1))"
+   newValDoc      = text "let newVal orig (Z:.pos) "
+                 $$ nest 1 (text "| pos == 0" <+> equals <+> exp)
+                 $$ nest 1 (text "| otherwise" <+> equals
+                <+> parens fun
+                <+> parens (text "newVal orig (Z:.(pos-1))")
+                <+> parens (text "orig (Z:.(pos-1))"))
+                 $$ text "in newVal"
+
 
 -- Generated code is quite inefficient due to repeated computations
 evalPreOpenAcc (Scanl' f e acc) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   returnString       = "(" ++ firstS ++ ", " ++ secondS ++ ")"
+   RepaParsed fun = evalFun     f   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+   exp            = evalExp     e   letLevel aenv
 
-   firstS          = "traverse (" ++ arrS ++ ")" ++ " (id) "
-                   ++ "(let newVal (origVal) sh@(Z:.pos) "
-                   ++ "| pos == 0 = " ++ expS ++ " "
-                   ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
-                                             "(newVal origVal (Z:.(pos-1))) " ++
-                                             "(origVal (Z:.(pos-1))) "
-                   ++ "in newVal)"
-   secondS         = "fold (" ++ funS ++ ") (" ++ expS ++ ") (" ++ arrS ++ ")"
-
-   RepaParsed funS = evalFun     f   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
-   expS            = evalExp     e   letLevel aenv
+   returnDoc      = parens (first $$ comma $$ second)
+   first          = text "traverse"
+                <+> (parens arr $$ text "(id)" $$ parens newValDoc)
+   second         = text "fold" <+> parens fun <+> parens exp <+> parens arr
+   newValDoc      = text "let newVal orig (Z:.pos) "
+                 $$ nest 1 (text "| pos == 0" <+> equals <+> exp)
+                 $$ nest 1 (text "| otherwise" <+> equals
+                <+> parens fun
+                <+> parens (text "newVal orig (Z:.(pos-1))")
+                <+> parens (text "orig (Z:.(pos-1))"))
+                 $$ text "in newVal"
 
 
 evalPreOpenAcc (Scanl1 f acc) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed funS = evalFun     f   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
+   RepaParsed fun = evalFun     f   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
 
-   returnString    = "traverse (" ++ arrS ++ ")" ++ " (id) "
-                   ++ "(let newVal (origVal) sh@(Z:.pos) "
-                   ++ "| pos == 0 = origVal sh "
-                   ++ "| otherwise = " ++ "(" ++ funS ++ ")" ++
-                                             "(newVal origVal (Z:.(pos-1))) " ++
-                                             "(origVal (Z:.pos)) "
-                   ++ "in newVal)"
+   returnDoc      = text "traverse"
+                <+> (parens arr $$ text "(id)" $$ parens newValDoc)
+   newValDoc      = text "let newVal orig sh@(Z:.pos) "
+                 $$ nest 1 (text "| pos == 0" <+> equals <+> text "orig sh")
+                 $$ nest 1 (text "| otherwise" <+> equals
+                <+> parens fun
+                <+> parens (text "newVal orig (Z:.(pos-1))")
+                <+> parens (text "orig sh)"))
+                 $$ text "in newVal"
+
 
 evalPreOpenAcc (Scanr f e acc) letLevel aenv
- = RepaParsed returnString
+ = RepaParsed returnDoc
  where
-   RepaParsed funS = evalFun     f   letLevel aenv
-   RepaParsed arrS = evalOpenAcc acc letLevel aenv
-   expS            = evalExp     e   letLevel aenv
+   RepaParsed fun = evalFun     f   letLevel aenv
+   RepaParsed arr = evalOpenAcc acc letLevel aenv
+   exp            = evalExp     e   letLevel aenv
 
-   returnString    = "traverse (" ++ arrS ++ ")" ++ " (\\(Z:.i) -> (Z:.(i+1))) "
-                   ++ "(let last = (size $ extent $ " ++ arrS ++ ") in "
-                   ++ "(let newVal (origVal) (Z:.pos) "
-                   ++ "| pos == last = " ++ expS ++ " "
-                   ++ "| otherwise = " ++ "(" ++ funS ++ ") " ++
-                                             "(newVal origVal (Z:.(pos+1))) " ++
-                                             "(origVal (Z:.pos)) "
-                   ++ "in newVal))"
+   returnDoc      = text "traverse"
+                <+> (parens arr $$ shapeDoc $$ newValDoc)
+   shapeDoc       = parens $ text "\\(Z:.i) -> (Z:.(i+1))"
+   newValDoc      = text "let newVal orig sh@(Z:.pos) "
+                 $$ nest 1 (text "| pos ==" <+> last <+> equals <+> text "orig sh")
+                 $$ nest 1 (text "| otherwise" <+> equals
+                <+> parens fun
+                <+> parens (text "newVal orig (Z:.(pos+1))")
+                <+> parens (text "orig sh)"))
+                 $$ text "in newVal"
+   last = parens $ text "size $ extent $" <+> arr
 
+
+{-
 evalPreOpenAcc (Scanr' f e acc) letLevel aenv
  = RepaParsed returnString
  where
@@ -270,8 +324,34 @@ evalPreOpenAcc (Scanr1 f acc) letLevel aenv
                    ++ "in newVal))"
 
 --TODO
-evalPreOpenAcc (Permute _f _dftAcc _p _acc) _letLevel _aenv
+evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
  = error "Permute"
+ where
+   RepaParsed dftArrS = evalOpenAcc dftAcc letLevel aenv
+   RepaParsed arrS    = evalOpenAcc acc    letLevel aenv
+   RepaParsed funS    = evalFun     f      letLevel aenv
+   permS              = evalFun     p      letLevel aenv
+
+   returnS = "(let " ++ lookupS ++ " in " ++ fromFunctionS ++ ")"
+   -- Defines the resulting array
+   fromFunctionS = "(fromFunction (extent " ++ dftArrS ++ ") " ++
+      "(\\sh -> case lookup' sh ??? of " ++
+                "Nothing -> " ++ dftArrS ++ " ! sh ; " ++
+                "Just xs -> Prelude.foldl " ++ funS ++ " (" ++ dftArrS ++ " ! sh) xs))"
+   -- Builds the association list by going over all source array elements and
+   --  recording a mapping between the resulting index after applying the
+   --  permutation function and the value in source array (before the mapping)
+   assListS = ""
+   -- Defines a function to look up the generated association list for all
+   --  matching values to the destination index
+   lookupS = 
+      "(lookup' :: Eq a => a -> [(a,b)] -> Maybe [b] ; " ++
+      "lookup' _key [] = Nothing ; " ++
+      "lookup' key ((x,y):xys) " ++
+         "| key == x = (case (lookup' key xys) of " ++
+                           "Just ys -> Just (y:ys) ; " ++
+                           "Nothing -> Just [y]) " ++
+         "| otherwise = lookup' key xys)"
 
 --TODO
 evalPreOpenAcc (Backpermute _e _p _acc) _letLevel _aenv
@@ -284,9 +364,9 @@ evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel _aenv
 --TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel _aenv
  = error "Stencil2"
+-}
 
-
-evalPreOpenAcc _ _ _ = error "Not yet implemented"
+evalPreOpenAcc _ _ _ = RepaParsed $ text "ERROR"
 
 --------------------
 -- FUNCTION NODES --
@@ -296,6 +376,8 @@ evalFun :: Fun aenv t -> Int-> Val aenv -> RepaParsed t
 evalFun f letL aenv = evalOpenFun f 0 letL Empty aenv
 
 evalOpenFun :: OpenFun env aenv t -> Int -> Int -> Val env -> Val aenv -> RepaParsed t
+evalOpenFun _ _ _ _ _ = RepaParsed $ text "ERROR"
+{-
 evalOpenFun (Body e) lamL letL env aenv
  = RepaParsed $ evalOpenExp e lamL letL env aenv
 evalOpenFun (Lam f)  lamL letL env aenv
@@ -303,15 +385,17 @@ evalOpenFun (Lam f)  lamL letL env aenv
  where
    RepaParsed funS = evalOpenFun f (lamL+1) letL (env `Push` (error "Lam")) aenv
    varName = "x" ++ (show lamL)
-
+-}
 ----------------------
 -- EXPRESSION NODES --
 ----------------------
 
 -- Evaluate an open expression
 evalOpenExp :: forall a env aenv .
-               OpenExp env aenv a -> Int -> Int -> Val env -> Val aenv -> String
+               OpenExp env aenv a -> Int -> Int -> Val env -> Val aenv -> Doc
+evalOpenExp _ _ _ _ _ = text "ERROR"
 
+{-
 evalOpenExp (Var idx) lamL letL env _
    = "x" ++ (show varNum)
    where
@@ -327,8 +411,12 @@ evalOpenExp (Tuple tup) lamL letL env aenv
    = evalTuple tup lamL letL env aenv
 
 --TODO
-evalOpenExp (Prj idx e) _lamL _letL env aenv 
+evalOpenExp (Prj idx e) lamL letL env aenv 
    = "Prj"
+--   = "let (" ++ tupS ++ ") = (" ++ expS ++ ") in tupVar"
+--   where
+--      expS = evalOpenExp e lamL letL env aenv
+--      tupS = (showsTypeRep $ typeOf e) ""
 
 evalOpenExp IndexNil _ _ _ _
    = "Z"
@@ -377,16 +465,17 @@ evalOpenExp (Size acc) _lamL letL _env aenv
    = "Repa.size (" ++ arrS ++ ")"
    where
       RepaParsed arrS = evalOpenAcc acc letL aenv
+-}
 
 -- Evaluate a closed expression
 --
-evalExp :: PreExp OpenAcc aenv t -> Int -> Val aenv -> String
+evalExp :: PreExp OpenAcc aenv t -> Int -> Val aenv -> Doc
 evalExp e letL aenv = evalOpenExp e 0 letL Empty aenv
 
 ------------
 -- TUPLES --
 ------------
-
+{-
 evalTuple :: Tuple (OpenExp env aenv) t -> Int -> Int -> Val env -> Val aenv -> String
 evalTuple tup lamL letL env aenv = "(" ++ evalTuple' tup lamL letL env aenv ++ ")"
 
@@ -398,7 +487,7 @@ evalTuple' (e1 `SnocTup` e2) lamL letL env aenv
       otherwise -> tupS ++ ", " ++ evalOpenExp e2 lamL letL env aenv
    where
       tupS = evalTuple' e1 lamL letL env aenv
-
+-}
 ---------------------
 -- VARIABLE HELPER --
 ---------------------
@@ -411,10 +500,23 @@ getVarNum (SuccIdx idx) = 1 + (getVarNum idx)
 -- SHAPE STRING --
 ------------------
 
-printShape :: Repr.Shape sh => sh -> String
-printShape sh = (printShape' $ Repr.shapeToList sh)
+printShape :: Repr.Shape sh => sh -> Doc
+printShape sh = text (printShape' $ Repr.shapeToList sh)
 
 printShape' :: [Int] -> String
 printShape' (x:xs) = (printShape' xs) ++ " :. (" ++ (show x) ++ " :: Int)"
 printShape' []     = "Z"
 
+-------------------------
+-- EVAL PRJ EXPRESSION --
+-------------------------
+{-
+evalPrj :: TupleIdx t e -> t -> String
+evalPrj (SuccTupIdx idx) (tup, _) = "(" ++ (evalPrj' (Just idx) tup) ++ "_)"
+
+evalPrj' :: Maybe (TupleIdx t e) -> t -> String
+evalPrj' Nothing (tup, _)                 = (evalPrj' Nothing tup) ++ "_, "
+evalPrj' Nothing ()                       = ""
+evalPrj' (Just (ZeroTupIdx)) (tup, _)     = (evalPrj' Nothing tup) ++ "tupVar, "
+evalPrj' (Just (SuccTupIdx idx)) (tup, _) = (evalPrj' (Just idx) tup) ++ "_, "
+-}

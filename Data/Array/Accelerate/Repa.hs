@@ -19,26 +19,23 @@ import qualified Data.Array.Accelerate.Smart as Smart
 
 import Data.Array.Accelerate.Repa.Evaluations (evalAcc)
 
+import Text.PrettyPrint
+
 -- | Used to compile and run an embedded array program using the Repa backend
 --run :: Arrays a => Smart.Acc a -> String
 --run = evalAcc . Smart.convertAcc
 
 run :: Arrays a => Smart.Acc a -> String
-run acc = headS ++ (evalAcc $ Smart.convertAcc acc) ++ tailS
+run acc = show $
+   headS $$ (nest 1 (evalAcc $ Smart.convertAcc acc))
+         $$ tailS
 
-headS :: String
+headS :: Doc
 {-# INLINE headS #-}
 headS =
-   "import Data.Array.Repa as Repa\n" ++
-   "main = putStrLn $ show $ "
+   text "import Data.Array.Repa as Repa" $+$
+   text "main = putStrLn $ show $"
 
-tailS :: String
+tailS :: Doc
 {-# INLINE tailS #-}
-tailS =
-   "\n" ++
-   "\n"
-   {-"\n" ++
-   "\n" ++
-   "size :: (Shape sh) => sh -> Int\n" ++
-   "size  Z     = 1\n" ++
-   "size (h:.t) = t * (Main.size h)\n"-}
+tailS = empty

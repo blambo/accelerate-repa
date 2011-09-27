@@ -12,7 +12,9 @@ module Data.Array.Accelerate.Repa.RepaParsed
    )
    where
 
-data RepaParsed a = RepaParsed String
+import Text.PrettyPrint
+
+data RepaParsed a = RepaParsed Doc
 
 data PossVar = VarUnit
              | VarTup  PossVar Int 

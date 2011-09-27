@@ -17,7 +17,8 @@ Stability:        Experimental
 Library
    Build-depends: repa == 2.*,
                   accelerate == 0.9.*,
-                  base
+                  base,
+                  pretty == 1.1.*
 
    Exposed-modules: Data.Array.Accelerate.Repa
    Other-modules:   Data.Array.Accelerate.Repa.Evaluations
