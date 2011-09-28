@@ -65,7 +65,7 @@ evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
    var2            = text "y" <> int (letLevel + 1)
    returnDoc       = text "let" <+> parens (var1 <> comma <+> var2)
                  <+> equals
-                  $$ (nest 1 arr1)
+                 <+> (parens $ nest 1 arr1)
                   $$ text "in"
                   $$ nest 1 arr2
 
@@ -221,12 +221,12 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
    returnDoc      = text "traverse"
                 <+> (parens arr $$ parens shapeDoc $$ parens newValDoc)
    shapeDoc       = text "\\(Z:.i) -> (Z:.(i+1))"
-   newValDoc      = text "let newVal orig (Z:.pos) "
-                 $$ nest 1 (text "| pos == 0" <+> equals <+> exp)
-                 $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos-1))")
-                <+> parens (text "orig (Z:.(pos-1))"))
+   newValDoc      = text "let newVal orig (Z:.pos)"
+                <+> ((text "| pos == 0" <+> equals <+> exp)
+                 $$  (text "| otherwise" <+> equals
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos-1))")
+                 $$ parens (text "orig (Z:.(pos-1))"))))
                  $$ text "in newVal"
 
 
@@ -243,12 +243,12 @@ evalPreOpenAcc (Scanl' f e acc) letLevel aenv
    first          = text "traverse"
                 <+> (parens arr $$ text "(id)" $$ parens newValDoc)
    second         = text "fold" <+> parens fun <+> parens exp <+> parens arr
-   newValDoc      = text "let newVal orig (Z:.pos) "
-                 $$ nest 1 (text "| pos == 0" <+> equals <+> exp)
+   newValDoc      = text "let newVal orig (Z:.pos)"
+                <+> ((text "| pos == 0" <+> equals <+> exp)
                  $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos-1))")
-                <+> parens (text "orig (Z:.(pos-1))"))
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos-1))")
+                 $$ parens (text "orig (Z:.(pos-1))"))))
                  $$ text "in newVal"
 
 
@@ -260,12 +260,12 @@ evalPreOpenAcc (Scanl1 f acc) letLevel aenv
 
    returnDoc      = text "traverse"
                 <+> (parens arr $$ text "(id)" $$ parens newValDoc)
-   newValDoc      = text "let newVal orig sh@(Z:.pos) "
-                 $$ nest 1 (text "| pos == 0" <+> equals <+> text "orig sh")
-                 $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos-1))")
-                <+> parens (text "orig sh)"))
+   newValDoc      = text "let newVal orig sh@(Z:.pos)"
+                <+> ((text "| pos == 0" <+> equals <+> text "orig sh")
+                 $$ (text "| otherwise" <+> equals
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos-1))")
+                 $$ parens (text "orig sh"))))
                  $$ text "in newVal"
 
 
@@ -277,14 +277,14 @@ evalPreOpenAcc (Scanr f e acc) letLevel aenv
    exp            = evalExp     e   letLevel aenv
 
    returnDoc      = text "traverse"
-                <+> (parens arr $$ shapeDoc $$ newValDoc)
+                <+> (parens arr $$ shapeDoc $$ parens newValDoc)
    shapeDoc       = parens $ text "\\(Z:.i) -> (Z:.(i+1))"
-   newValDoc      = text "let newVal orig sh@(Z:.pos) "
-                 $$ nest 1 (text "| pos ==" <+> last <+> equals <+> text "orig sh")
-                 $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos+1))")
-                <+> parens (text "orig sh)"))
+   newValDoc      = text "let newVal orig sh@(Z:.pos)"
+                <+> ((text "| pos ==" <+> last <+> equals <+> exp)
+                 $$ (text "| otherwise" <+> equals
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos+1))")
+                 $$ parens (text "orig sh"))))
                  $$ text "in newVal"
    last = parens $ text "size $ extent $" <+> arr
 
@@ -308,12 +308,12 @@ evalPreOpenAcc (Scanr' f e acc) letLevel aenv
    second         = text "fromList Z [(res!(Z:.0))]"
 
    shapeDoc       = text "\\(Z:.i) -> (Z:.(i+1))"
-   newVarDoc      = text "let newVal orig sh@(Z:.pos) "
-                 $$ nest 1 (text "| pos ==" <+> last <+> equals <+> text "orig sh")
-                 $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos+1))")
-                <+> parens (text "orig sh)"))
+   newVarDoc      = text "let newVal orig sh@(Z:.pos)"
+                <+> ((text "| pos ==" <+> last <+> equals <+> exp)
+                 $$ (text "| otherwise" <+> equals
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos+1))")
+                 $$ parens (text "orig sh"))))
                  $$ text "in newVal"
    last           = parens $ text "size $ extent $" <+> arr
 
@@ -327,12 +327,13 @@ evalPreOpenAcc (Scanr1 f acc) letLevel aenv
    returnDoc      = text "traverse"
                 <+> (parens arr $$ shapeDoc $$ parens newVarDoc)
    shapeDoc       = parens $ text "id"
-   newVarDoc      = text "let newVal orig sh@(Z:.pos) "
-                 $$ nest 1 (text "| pos ==" <+> last <+> equals <+> text "orig sh")
-                 $$ nest 1 (text "| otherwise" <+> equals
-                <+> parens fun
-                <+> parens (text "newVal orig (Z:.(pos+1))")
-                <+> parens (text "orig sh)"))
+   newVarDoc      = text "let newVal orig sh@(Z:.pos)"
+                <+> ((text "| pos ==" <+> parens last <+> text "- 1"
+                            <+> equals <+> text "orig sh")
+                 $$ (text "| otherwise" <+> equals
+                <+> (parens fun
+                 $$ parens (text "newVal orig (Z:.(pos+1))")
+                 $$ parens (text "orig sh"))))
                  $$ text "in newVal" 
    last           = parens $ text "size $ extent $" <+> arr
 
