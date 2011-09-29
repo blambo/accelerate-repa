@@ -469,9 +469,11 @@ evalOpenExp (PrimApp p arg) lamL letL env aenv
    where
       argS = evalOpenExp arg lamL letL env aenv
 
---TODO
 evalOpenExp (IndexScalar acc ix) lamL letL env aenv 
-   = RepaExp $ text "<ERROR:IndexScalar>"
+   = RepaExp $ parens arr <+> char '!' <+> parens idx
+   where
+      RepaAcc arr = evalOpenAcc acc letL aenv
+      RepaExp idx = evalOpenExp ix lamL letL env aenv
 
 --TODO
 evalOpenExp (Shape acc) _lamL _letL _env _aenv 
