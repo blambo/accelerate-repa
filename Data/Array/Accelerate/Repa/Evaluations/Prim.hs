@@ -97,4 +97,4 @@ binOp _   _
 
 
 unaryOp :: Doc -> RepaExp -> Doc
-unaryOp op e = op <+> (toDoc e)
+unaryOp op e = op <+> (parens $ toDoc e)

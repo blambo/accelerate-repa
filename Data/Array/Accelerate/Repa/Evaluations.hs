@@ -425,7 +425,7 @@ evalOpenExp (Tuple tup) lamL letL env aenv
 
 evalOpenExp (Prj idx e) lamL letL env aenv 
    = RepaExp $ text "let" <+> parens prjS <+> equals <+> parens expS
-            $$ text "in" <+> prjVarName
+           <+> text "in" <+> prjVarName
    where
       prjS = evalPrj (tupSize $ expType e) (tupIdx idx)
       expS = toDoc $ evalOpenExp e lamL letL env aenv
