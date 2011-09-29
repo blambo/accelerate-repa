@@ -19,6 +19,7 @@ import Text.PrettyPrint
 import Data.Array.Accelerate.AST
 import Data.Array.Accelerate.Array.Sugar as Sugar
 import Data.Array.Accelerate.Tuple
+import Data.Array.Accelerate.Type
 import qualified Data.Array.Accelerate.Array.Representation as Repr
 
 import Data.Array.Accelerate.Repa.Evaluations.Prim
@@ -422,13 +423,12 @@ evalOpenExp (Const c) _ _ _ _
 evalOpenExp (Tuple tup) lamL letL env aenv 
    = evalTuple tup lamL letL env aenv
 
---TODO
 evalOpenExp (Prj idx e) lamL letL env aenv 
-   = RepaExp $ text "<ERROR:Prj>"
---   = "let (" ++ tupS ++ ") = (" ++ expS ++ ") in tupVar"
---   where
---      expS = evalOpenExp e lamL letL env aenv
---      tupS = (showsTypeRep $ typeOf e) ""
+   = RepaExp $ text "let" <+> parens prjS <+> equals <+> parens expS
+            $$ text "in" <+> prjVarName
+   where
+      prjS = evalPrj (tupSize $ expType e) (tupIdx idx)
+      expS = toDoc $ evalOpenExp e lamL letL env aenv
 
 evalOpenExp IndexNil _ _ _ _
    = RepaExp $ char 'Z'
@@ -525,13 +525,56 @@ printShape' []     = "Z"
 -------------------------
 -- EVAL PRJ EXPRESSION --
 -------------------------
-{-
-evalPrj :: TupleIdx t e -> t -> String
-evalPrj (SuccTupIdx idx) (tup, _) = "(" ++ (evalPrj' (Just idx) tup) ++ "_)"
 
-evalPrj' :: Maybe (TupleIdx t e) -> t -> String
-evalPrj' Nothing (tup, _)                 = (evalPrj' Nothing tup) ++ "_, "
-evalPrj' Nothing ()                       = ""
-evalPrj' (Just (ZeroTupIdx)) (tup, _)     = (evalPrj' Nothing tup) ++ "tupVar, "
-evalPrj' (Just (SuccTupIdx idx)) (tup, _) = (evalPrj' (Just idx) tup) ++ "_, "
--}
+evalPrj :: Int -> Int -> Doc
+evalPrj tup 0   = parens $ evalPrj' (tup-1) (-1)    <+> prjVarName
+evalPrj tup idx = parens $ evalPrj' (tup-1) (idx-1) <+> char '_'
+
+evalPrj' :: Int -> Int -> Doc
+evalPrj' 1   0   = prjVarName <> comma
+evalPrj' 1   idx = char '_'   <> comma
+evalPrj' tup 0   = evalPrj' (tup-1) (-1)    <+> prjVarName <> comma
+evalPrj' tup idx = evalPrj' (tup-1) (idx-1) <+> char '_'   <> comma
+
+prjVarName :: Doc
+prjVarName = text "tVar"
+
+-- Returns the number of members in a tuple
+tupSize :: TupleType a -> Int
+tupSize UnitTuple       = 0
+tupSize (PairTuple a b) = (tupSize a) + (tupSize b)
+tupSize (SingleTuple _) = 1
+
+-- Returns how many members of a tuple from the 'left' we are referencing
+tupIdx :: TupleIdx t e -> Int
+tupIdx (SuccTupIdx idx) = 1 + tupIdx idx
+tupIdx ZeroTupIdx       = 0
+
+-- Copied from Data.Array.Accelerate.Analysis.Type
+tupleIdxType :: forall t e. TupleIdx t e -> TupleType (EltRepr e)
+tupleIdxType ZeroTupIdx       = eltType (undefined::e)
+tupleIdxType (SuccTupIdx idx) = tupleIdxType idx
+
+-- Adapted from Data.Array.Accelerate.Analysis.Type
+expType :: OpenExp aenv env t -> TupleType (EltRepr t)
+expType = preExpType
+
+preExpType :: forall acc aenv env t. PreOpenExp acc aenv env t
+           -> TupleType (EltRepr t)
+preExpType e =
+   case e of
+    Var _             -> eltType (undefined::t)
+    Const _           -> eltType (undefined::t)
+    Tuple _           -> eltType (undefined::t)
+    Prj idx _         -> tupleIdxType idx
+    IndexNil          -> eltType (undefined::t)
+    IndexCons _ _     -> eltType (undefined::t)
+    IndexHead _       -> eltType (undefined::t)
+    IndexTail _       -> eltType (undefined::t)
+    IndexAny          -> eltType (undefined::t)
+    Cond _ t _        -> preExpType t
+    PrimConst _       -> eltType (undefined::t)
+    PrimApp _ _       -> eltType (undefined::t)
+    Shape _           -> eltType (undefined::t)
+    Size _            -> eltType (undefined::t)
+    otherwise         -> error "Typing error"
