@@ -16,6 +16,8 @@ import Data.Array.Accelerate.AST
 
 import Text.PrettyPrint
 
+import Data.Array.Accelerate.Repa.Traverse
+
 evalPrimConst :: PrimConst a -> Doc
 
 evalPrimConst (PrimMinBound ty) = text "minBound"
@@ -23,7 +25,7 @@ evalPrimConst (PrimMaxBound ty) = text "maxBound"
 evalPrimConst (PrimPi       ty) = text "pi"
 
 
-evalPrim :: PrimFun p -> Doc -> Doc
+evalPrim :: PrimFun p -> RepaExp -> Doc
 
 evalPrim (PrimAdd ty) s             = binOp   (char '+')            s
 evalPrim (PrimSub ty) s             = binOp   (char '-')            s
@@ -87,10 +89,12 @@ fstS = text "fst"
 sndS :: Doc
 sndS = text "snd"
 
-binOp :: Doc -> Doc -> Doc
-binOp op arg = parens (fstS <+> arg)
-           <+> op
-           <+> parens (sndS <+> arg)
+binOp :: Doc -> RepaExp -> Doc
+binOp op (RepaTuple (a:b:[]))
+   = parens a <+> op <+> parens b
+binOp _   _
+   = error "Binary operation not given corrent number of operands"
 
-unaryOp :: Doc -> Doc -> Doc
-unaryOp op arg = op <+> arg
+
+unaryOp :: Doc -> RepaExp -> Doc
+unaryOp op e = op <+> (toDoc e)

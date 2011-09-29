@@ -23,4 +23,4 @@ Library
    Exposed-modules: Data.Array.Accelerate.Repa
    Other-modules:   Data.Array.Accelerate.Repa.Evaluations
                     Data.Array.Accelerate.Repa.Evaluations.Prim
-                    Data.Array.Accelerate.Repa.RepaParsed
+                    Data.Array.Accelerate.Repa.Traverse
