@@ -475,9 +475,10 @@ evalOpenExp (IndexScalar acc ix) lamL letL env aenv
       RepaAcc arr = evalOpenAcc acc letL aenv
       RepaExp idx = evalOpenExp ix lamL letL env aenv
 
---TODO
-evalOpenExp (Shape acc) _lamL _letL _env _aenv 
-   = RepaExp $ text "<ERROR:Shape>"
+evalOpenExp (Shape acc) lamL letL env aenv 
+   = RepaExp $ text "extent" <+> parens arr
+   where
+      RepaAcc arr = evalOpenAcc acc letL aenv
 
 evalOpenExp (Size acc) _lamL letL _env aenv 
    = RepaExp $ text "Repa.size" <+> parens arr
