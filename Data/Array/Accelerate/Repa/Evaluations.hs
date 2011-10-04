@@ -61,7 +61,7 @@ evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
  where
    RepaAcc arr1 = evalOpenAcc acc1 letLevel aenv
    RepaAcc arr2 = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
-                                                         `Push` (error "let2,2"))
+                                                      `Push` (error "let2,2"))
    var1         = text "y" <> int letLevel
    var2         = text "y" <> int (letLevel + 1)
    returnDoc    = text "let" <+> parens (var1 <> comma <+> var2)
@@ -87,9 +87,15 @@ evalPreOpenAcc (Avar idx) letLevel _aenv
    varNum = getVarNum idx
 
 
--- TODO
-evalPreOpenAcc (Apply (Alam (Abody _funAcc)) _acc) _letLevel _aenv
- = RepaAcc $ text "<ERROR:Apply>"
+evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel aenv
+ = RepaAcc $ returnDoc
+ where
+   RepaAcc fun = evalOpenAcc funAcc letLevel (Empty `Push` (error "Apply"))
+   RepaAcc arr = evalOpenAcc acc    letLevel  aenv
+
+   returnDoc   = parens fun -- <+> parens arr
+
+
 evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
  = error "GHC pattern matching does not detect that this case is impossible"
 
@@ -341,35 +347,79 @@ evalPreOpenAcc (Scanr1 f acc) letLevel aenv
 
 --TODO
 evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
- = RepaAcc $ text "<ERROR:Permute>"
+ = RepaAcc $ returnDoc
  where
-   {-
-   RepaAcc dftArrS = evalOpenAcc dftAcc letLevel aenv
-   RepaAcc arrS    = evalOpenAcc acc    letLevel aenv
-   RepaAcc funS    = evalFun     f      letLevel aenv
-   permS              = evalFun     p      letLevel aenv
+   RepaAcc dftArrD = evalOpenAcc dftAcc letLevel aenv
+   RepaAcc srcArrD = evalOpenAcc acc    letLevel aenv
+   RepaAcc combD   = evalFun     f      letLevel aenv
+   RepaAcc permD   = evalFun     p      letLevel aenv
 
-   returnS = "(let " ++ lookupS ++ " in " ++ fromFunctionS ++ ")"
-   -- Defines the resulting array
-   fromFunctionS = "(fromFunction (extent " ++ dftArrS ++ ") " ++
-      "(\\sh -> case lookup' sh ??? of " ++
-                "Nothing -> " ++ dftArrS ++ " ! sh ; " ++
-                "Just xs -> Prelude.foldl " ++ funS ++ " (" ++ dftArrS ++ " ! sh) xs))"
-   -- Builds the association list by going over all source array elements and
-   --  recording a mapping between the resulting index after applying the
-   --  permutation function and the value in source array (before the mapping)
-   assListS = ""
-   -- Defines a function to look up the generated association list for all
-   --  matching values to the destination index
-   lookupS = 
-      "(lookup' :: Eq a => a -> [(a,b)] -> Maybe [b] ; " ++
-      "lookup' _key [] = Nothing ; " ++
-      "lookup' key ((x,y):xys) " ++
-         "| key == x = (case (lookup' key xys) of " ++
-                           "Just ys -> Just (y:ys) ; " ++
-                           "Nothing -> Just [y]) " ++
-         "| otherwise = lookup' key xys)"
-   -}
+   returnDoc =
+      text "let" <+> (text "srcArr =" <+> srcArrD
+                   $$ text "dftArr =" <+> dftArrD
+                   $$ text "perm   =" <+> (parens permD)
+                   $$ text "comb   =" <+> (parens combD)
+                   $$ decShD
+                   $$ lookupD)
+    $$ text "in"
+    $$ nest 1 (text "let sortedList =" <+> (sortListD
+                                             $$ nest 1 ((parens genAssocListD)
+                                                    <+> (parens srcArrLastD)))
+            $$ text "in" <+> fromFunctionD)
+
+   genAssocListD =
+      text "let" <+>
+       (text "genAssocList :: (Shape sh, Elt a) => (Maybe sh) -> [(sh, a)]"
+       $$ text "genAssocList Nothing   = []"
+       $$ text "genAssocList (Just sh) =" <+>
+                         (text "let sh' = perm sh"
+                       $$ text "in case sh' == -1 of"
+                       $$ nest 1 (text "True  -> genAssocList (decSh sh)"
+                               $$ text "False ->"
+                               <+> (text "let val = srcArr ! sh"
+                                 $$ text "in ((sh',val) : (genAssocList (decSh sh)))"
+                                   )
+                                  )
+                          )
+       )
+      $$ text "in genAssocList"
+
+   decShD =
+       text "decSh :: (Shape sh) => sh -> sh -> Maybe sh"
+    $$ text "decSh Z       _extent     = Nothing"
+    $$ text "decSh (sh:.0) (exts:.ext) =" <+> (text "case (decSh sh exts) of"
+                                                $$ nest 1 (text "Just sh' -> (sh':.(ext-1))"
+                                                        $$ text "Nothing  -> Nothing"))
+    $$ text "decSh (sh:.i) _extent     = Just (sh:.(i-1))"
+
+   sortListD =
+      text "sortBy (\\(sh1,_) (sh2,_) -> compare sh1 sh2)"
+
+   fromFunctionD =
+      text "fromFunction"
+      <+> (text "(extent dftArr)"
+         $$ parens (text "\\sh -> case lookup' sh sortedList of"
+                   $$ nest 1 (text "Nothing -> dftArr ! sh"
+                           $$ text "Just xs -> Prelude.foldl comb (dftArr!sh) xs"
+                             )
+                   )
+          )
+
+   srcArrLastD =
+      text "shapeOfList (Prelude.map (1-) (listOfShape $ arrayExtent srcArr))"
+
+   lookupD =
+      text "lookup' :: Eq a => a -> [(a,b)] -> Maybe [b]" $$
+      text "lookup' _key [] = Nothing" $$
+      text "lookup' key ((x,y):xys)" $$
+         nest 1 (text "| key == x = (case (lookup' key xys) of" $$
+                  nest 1 (text "Just ys -> Just (y:ys)" $$
+                          text "Nothing -> Just [y])"
+                         ) $$
+                 text "| otherwise = lookup' key xys"
+                )
+
+
 --TODO
 evalPreOpenAcc (Backpermute _e _p _acc) _letLevel _aenv
  = RepaAcc $ text "<ERROR:Backpermute>"
