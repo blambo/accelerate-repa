@@ -34,6 +34,8 @@ headS :: Doc
 {-# INLINE headS #-}
 headS =
    text "import Data.Array.Repa as Repa" $+$
+   text "import Data.Bits -- required for Prim ops" $+$
+   text "import Data.Char -- required for Prim ops" $+$
    text "main = putStrLn $ show $"
 
 tailS :: Doc
