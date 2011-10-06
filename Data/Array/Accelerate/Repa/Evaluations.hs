@@ -90,10 +90,15 @@ evalPreOpenAcc (Avar idx) letLevel _aenv
 evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel aenv
  = RepaAcc $ returnDoc
  where
-   RepaAcc fun = evalOpenAcc funAcc letLevel (Empty `Push` (error "Apply"))
+   RepaAcc fun = evalOpenAcc funAcc (1) (Empty `Push` (error "Apply"))
    RepaAcc arr = evalOpenAcc acc    letLevel  aenv
 
-   returnDoc   = parens fun -- <+> parens arr
+--   returnDoc   = empty -- parens fun  <+> parens arr
+   var         = char 'y' <> int 0
+   returnDoc   = text "let" <+> var
+             <+> equals <+> parens arr
+              $$ text "in"
+              $$ nest 1 fun
 
 
 evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
