@@ -363,8 +363,8 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
                    $$ lookupD)
     $$ text "in"
     $$ nest 1 (text "let sortedList =" <+> (sortListD
-                                             $$ nest 1 ((parens genAssocListD)
-                                                    <+> (parens srcArrLastD)))
+                                             $$ parens (nest 1 ((parens genAssocListD)
+                                                    <+> (parens srcArrLastD))))
             $$ text "in" <+> fromFunctionD)
 
    genAssocListD =
