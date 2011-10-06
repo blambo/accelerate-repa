@@ -36,6 +36,7 @@ headS =
    text "import Data.Array.Repa as Repa" $+$
    text "import Data.Bits -- required for Prim ops" $+$
    text "import Data.Char -- required for Prim ops" $+$
+   text "import Data.Int  -- required for Prim ops" $+$
    text "import Data.List (sortBy)  -- required for permute" $+$
    text "import Data.Ord  (compare) -- required for permute" $+$
    text "main = putStrLn $ show $"
