@@ -388,7 +388,7 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
        text "decSh :: (Shape sh) => sh -> sh -> Maybe sh"
     $$ text "decSh Z       _extent     = Nothing"
     $$ text "decSh (sh:.0) (exts:.ext) =" <+> (text "case (decSh sh exts) of"
-                                                $$ nest 1 (text "Just sh' -> (sh':.(ext-1))"
+                                                $$ nest 1 (text "Just sh' -> Just (sh':.(ext-1))"
                                                         $$ text "Nothing  -> Nothing"))
     $$ text "decSh (sh:.i) _extent     = Just (sh:.(i-1))"
 
