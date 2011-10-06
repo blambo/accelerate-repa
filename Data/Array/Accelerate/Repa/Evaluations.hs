@@ -62,9 +62,9 @@ evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
    RepaAcc arr1 = evalOpenAcc acc1 letLevel aenv
    RepaAcc arr2 = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
                                                       `Push` (error "let2,2"))
-   returnDoc    = text "let" <+> parens (var1 <> comma <+> var2)
    var1         = char 'y' <> int letLevel
    var2         = char 'y' <> int (letLevel + 1)
+   returnDoc    = text "let" <+> parens (var2 <> comma <+> var1)
               <+> equals
               <+> (parens $ nest 1 arr1)
                $$ text "in"
