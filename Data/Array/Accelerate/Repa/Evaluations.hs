@@ -6,7 +6,7 @@
 --
 -- Maintainer : Ben Lambert-Smith <blambo+github@gmail.com>
 --
--- This module re-exports a number of modules for evaluating Accelerate AST nodes
+-- Defines the code generation for Acc, Exp and Fun nodes into Repa code
 
 module Data.Array.Accelerate.Repa.Evaluations
    ( evalAcc
