@@ -204,9 +204,26 @@ evalPreOpenAcc (Fold f e acc) letLevel
 
 
 --TODO
-evalPreOpenAcc (Fold1 _f _acc) _letLevel
- = RepaAcc $ text "<ERROR:Fold1>"
+evalPreOpenAcc (Fold1 f acc) letLevel
+ = RepaAcc $ returnDoc
+ where
+   RepaAcc combD   = evalFun f letLevel
+   RepaAcc srcArrD = evalOpenAcc acc letLevel
 
+   newShapeD = parens $ text "\\(sh:._) -> sh"
+   genElemD
+      = parens $ text "\\lookup pos ->"
+             <+> (text "let (_:.end) = extent srcArr"
+               $$ text "in foldr1 comb"
+               $$ nest 1 (text "$ Prelude.map (lookup) [(pos:.i) | i <- [0..(end-1)]]"))
+
+   returnDoc =
+      text "let" <+> (text "srcArr =" <+> srcArrD
+                   $$ text "comb   =" <+> combD)
+      $$ text "in traverse"
+                  <+> (parens srcArrD
+                   $$ newShapeD
+                   $$ genElemD)
 
 --TODO
 evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel
@@ -381,9 +398,16 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel
       $$ text "in permute (idx+1) comb newArr perm srcArr"
 
 
---TODO
 evalPreOpenAcc (Backpermute e p acc) letLevel
- = RepaAcc $ text "<ERROR:Backpermute>"
+ = RepaAcc $ returnDoc
+ where
+   returnDoc = text "backpermute"
+           <+> parens expD
+           <+> parens permD
+           <+> parens srcArrD
+   expD            = toDoc $ evalExp e letLevel
+   RepaAcc permD   = evalFun     p   letLevel
+   RepaAcc srcArrD = evalOpenAcc acc letLevel
 
 --TODO
 evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel
