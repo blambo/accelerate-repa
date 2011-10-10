@@ -350,7 +350,6 @@ evalPreOpenAcc (Scanr1 f acc) letLevel aenv
    last        = parens $ text "size $ extent $" <+> arr
 
 
---TODO
 evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
  = RepaAcc $ returnDoc
  where
@@ -385,7 +384,7 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
 
 
 --TODO
-evalPreOpenAcc (Backpermute _e _p _acc) _letLevel _aenv
+evalPreOpenAcc (Backpermute e p acc) letLevel aenv
  = RepaAcc $ text "<ERROR:Backpermute>"
 
 --TODO
