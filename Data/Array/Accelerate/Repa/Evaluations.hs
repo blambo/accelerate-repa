@@ -364,65 +364,24 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
                    $$ text "dftArr =" <+> dftArrD
                    $$ text "perm   =" <+> (parens permD)
                    $$ text "comb   =" <+> (parens combD)
-                   $$ decShD
-                   $$ lookupD)
-    $$ text "in"
-    $$ nest 1 (text "let sortedList =" <+> (sortListD
-                                             $$ parens (nest 1 ((parens genAssocListD)
-                                                    <+> (parens srcArrLastD))))
-            $$ text "in" <+> fromFunctionD)
+                   $$ permuteDoc)
+      $$ text "in"
+      $$ nest 1 (text "permute 0 comb dftArr perm srcArr")
 
-   genAssocListD =
-      text "let" <+>
-       (text "genAssocList :: (Shape sh, Elt a) => (Maybe sh) -> [(sh, a)]"
-       $$ text "genAssocList Nothing   = []"
-       $$ text "genAssocList (Just sh) =" <+>
-                         (text "let sh' = perm sh"
-                       $$ text "in case sh' == -1 of"
-                       $$ nest 1 (text "True  -> genAssocList (decSh sh)"
-                               $$ text "False ->"
-                               <+> (text "let val = srcArr ! sh"
-                                 $$ text "in ((sh',val) : (genAssocList (decSh sh)))"
-                                   )
-                                  )
-                          )
-       )
-      $$ text "in genAssocList"
+   permuteDoc =
+      text "permute idx comb dftArr perm srcArr" $$
+      nest 1 (text "| idx >= (size $ extent srcArr) = dftArr"
+           $$ text "| otherwise =" <+> permuteArgsDoc)
 
-   decShD =
-       text "decSh :: (Shape sh) => sh -> sh -> Maybe sh"
-    $$ text "decSh Z       _extent     = Nothing"
-    $$ text "decSh (sh:.0) (exts:.ext) =" <+> (text "case (decSh sh exts) of"
-                                                $$ nest 1 (text "Just sh' -> Just (sh':.(ext-1))"
-                                                        $$ text "Nothing  -> Nothing"))
-    $$ text "decSh (sh:.i) _extent     = Just (sh:.(i-1))"
-
-   sortListD =
-      text "sortBy (\\(sh1,_) (sh2,_) -> compare sh1 sh2)"
-
-   fromFunctionD =
-      text "fromFunction"
-      <+> (text "(extent dftArr)"
-         $$ parens (text "\\sh -> case lookup' sh sortedList of"
-                   $$ nest 1 (text "Nothing -> dftArr ! sh"
-                           $$ text "Just xs -> Prelude.foldl comb (dftArr!sh) xs"
-                             )
-                   )
-          )
-
-   srcArrLastD =
-      text "shapeOfList (Prelude.map (1-) (listOfShape $ arrayExtent srcArr))"
-
-   lookupD =
-      text "lookup' :: Eq a => a -> [(a,b)] -> Maybe [b]" $$
-      text "lookup' _key [] = Nothing" $$
-      text "lookup' key ((x,y):xys)" $$
-         nest 1 (text "| key == x = (case (lookup' key xys) of" $$
-                  nest 1 (text "Just ys -> Just (y:ys)" $$
-                          text "Nothing -> Just [y])"
-                         ) $$
-                 text "| otherwise = lookup' key xys"
-                )
+   permuteArgsDoc =
+      text "let" <+> (text "srcIdx = fromIndex (extent srcArr) idx"
+          $$ text "newArr = fromFunction"
+          <+> (text "(extent dftArr)"
+            $$ text "(\\sh -> case sh == (perm srcIdx) of"
+            $$ nest 1 (text "True  -> (dftArr ! (perm srcIdx)) `comb`"
+                            <+> text "(srcArr ! srcIdx)"
+                    $$ text "False -> index dftArr sh)")))
+      $$ text "in permute (idx+1) comb newArr perm srcArr"
 
 
 --TODO
