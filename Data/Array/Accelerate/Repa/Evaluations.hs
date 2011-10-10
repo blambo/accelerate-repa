@@ -34,20 +34,20 @@ evalAcc :: Acc a -> Doc
 evalAcc acc
  = parsedS
  where
-   RepaAcc parsedS = evalOpenAcc acc 0 Empty
+   RepaAcc parsedS = evalOpenAcc acc 0
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Int -> Val aenv -> RepaAcc
+evalOpenAcc :: OpenAcc aenv a -> Int -> RepaAcc
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> Val aenv -> RepaAcc
+evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> RepaAcc
 
-evalPreOpenAcc (Let acc1 acc2) letLevel aenv
+evalPreOpenAcc (Let acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc arr1 = evalOpenAcc acc1 letLevel      aenv
-   RepaAcc arr2 = evalOpenAcc acc2 (letLevel+1) (aenv `Push` error "from let")
+   RepaAcc arr1 = evalOpenAcc acc1 letLevel
+   RepaAcc arr2 = evalOpenAcc acc2 (letLevel+1)
 
    var          = char 'y' <> int letLevel
    returnDoc    = text "let" <+> var
@@ -56,12 +56,11 @@ evalPreOpenAcc (Let acc1 acc2) letLevel aenv
                $$ nest 1 arr2
 
 
-evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
+evalPreOpenAcc (Let2 acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc arr1 = evalOpenAcc acc1 letLevel aenv
-   RepaAcc arr2 = evalOpenAcc acc2 (letLevel+2) (aenv `Push` (error "let2,1") 
-                                                      `Push` (error "let2,2"))
+   RepaAcc arr1 = evalOpenAcc acc1 letLevel
+   RepaAcc arr2 = evalOpenAcc acc2 (letLevel+2)
    var1         = char 'y' <> int letLevel
    var2         = char 'y' <> int (letLevel + 1)
    returnDoc    = text "let" <+> parens (var2 <> comma <+> var1)
@@ -71,29 +70,28 @@ evalPreOpenAcc (Let2 acc1 acc2) letLevel aenv
                $$ nest 1 arr2
 
 
-evalPreOpenAcc (PairArrays acc1 acc2) letLevel aenv
+evalPreOpenAcc (PairArrays acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc arr1 = evalOpenAcc acc1 letLevel aenv
-   RepaAcc arr2 = evalOpenAcc acc2 letLevel aenv
+   RepaAcc arr1 = evalOpenAcc acc1 letLevel
+   RepaAcc arr2 = evalOpenAcc acc2 letLevel
 
    returnDoc    = parens (parens arr1 <> comma <+> parens arr2)
 
 
-evalPreOpenAcc (Avar idx) letLevel _aenv
+evalPreOpenAcc (Avar idx) letLevel
  = RepaAcc var
  where
    var    = char 'y' <> int (letLevel - varNum - 1)
    varNum = getVarNum idx
 
 
-evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel aenv
+evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel
  = RepaAcc $ returnDoc
  where
-   RepaAcc fun = evalOpenAcc funAcc (1) (Empty `Push` (error "Apply"))
-   RepaAcc arr = evalOpenAcc acc    letLevel  aenv
+   RepaAcc fun = evalOpenAcc funAcc (1)
+   RepaAcc arr = evalOpenAcc acc    letLevel
 
---   returnDoc   = empty -- parens fun  <+> parens arr
    var         = char 'y' <> int 0
    returnDoc   = text "let" <+> var
              <+> equals <+> parens arr
@@ -101,16 +99,16 @@ evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel aenv
               $$ nest 1 fun
 
 
-evalPreOpenAcc (Apply _afun _acc) _letLevel _aenv
+evalPreOpenAcc (Apply _afun _acc) _letLevel
  = error "GHC pattern matching does not detect that this case is impossible"
 
 
-evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
+evalPreOpenAcc (Acond cond acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
-   exp          = toDoc $ evalExp cond letLevel aenv
-   RepaAcc arr1 = evalOpenAcc acc1 letLevel aenv
-   RepaAcc arr2 = evalOpenAcc acc2 letLevel aenv
+   exp          = toDoc $ evalExp cond letLevel
+   RepaAcc arr1 = evalOpenAcc acc1 letLevel
+   RepaAcc arr2 = evalOpenAcc acc2 letLevel
 
    returnDoc    = text "if" <+> exp
                $$ text "then" $$ (nest 1 arr1)
@@ -118,7 +116,7 @@ evalPreOpenAcc (Acond cond acc1 acc2) letLevel aenv
 
 
 
-evalPreOpenAcc (Use arr@(Array sh e)) letLevel aenv
+evalPreOpenAcc (Use arr@(Array sh e)) letLevel
  = RepaAcc returnDoc
  where
    shS       = printShape sh
@@ -131,27 +129,27 @@ evalPreOpenAcc (Use arr@(Array sh e)) letLevel aenv
            <+> parens (arrData <+> colon <> colon <+> listType)
 
 
-evalPreOpenAcc (Unit e) letLevel aenv
+evalPreOpenAcc (Unit e) letLevel
  = RepaAcc returnDoc
  where
-   exp       = toDoc $ evalExp e letLevel aenv
+   exp       = toDoc $ evalExp e letLevel
    returnDoc = text "fromList Z" <+> brackets exp
 
 
-evalPreOpenAcc (Reshape e acc) letLevel aenv
+evalPreOpenAcc (Reshape e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
-   exp         = toDoc $ evalExp e letLevel aenv
+   RepaAcc arr = evalOpenAcc acc letLevel
+   exp         = toDoc $ evalExp e letLevel
 
    returnDoc   = text "reshape" <+> parens exp <+> parens arr
 
 
-evalPreOpenAcc (Generate sh f) letLevel aenv
+evalPreOpenAcc (Generate sh f) letLevel
  = RepaAcc returnDoc
  where
-   exp         = toDoc $ evalExp sh letLevel aenv
-   RepaAcc fun = evalFun f letLevel aenv
+   exp         = toDoc $ evalExp sh letLevel
+   RepaAcc fun = evalFun f letLevel
 
    returnDoc   = text "fromFunction"
              <+> parens exp
@@ -159,32 +157,32 @@ evalPreOpenAcc (Generate sh f) letLevel aenv
 
 
 --TODO
-evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel _aenv
+evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel
  = RepaAcc $ text "<ERROR:Replicate>"
 
 
 --TODO
-evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel _aenv
+evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel
  = RepaAcc $ text "<ERROR:Index>"
 
 
-evalPreOpenAcc (Map f acc) letLevel aenv
+evalPreOpenAcc (Map f acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
 
    returnDoc   = text "Repa.map"
              <+> (parens fun
               $$ parens arr)
 
 
-evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
+evalPreOpenAcc (ZipWith f acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun  = evalFun f letLevel aenv
-   RepaAcc arr1 = (evalOpenAcc acc1 letLevel aenv) 
-   RepaAcc arr2 = (evalOpenAcc acc2 letLevel aenv) 
+   RepaAcc fun  = evalFun f letLevel
+   RepaAcc arr1 = evalOpenAcc acc1 letLevel 
+   RepaAcc arr2 = evalOpenAcc acc2 letLevel 
 
    returnDoc       = text "Repa.zipWith"
                  <+> (parens fun
@@ -192,12 +190,12 @@ evalPreOpenAcc (ZipWith f acc1 acc2) letLevel aenv
                   $$ parens arr2)
 
 
-evalPreOpenAcc (Fold f e acc) letLevel aenv
+evalPreOpenAcc (Fold f e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   exp         = toDoc $ evalExp e letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   exp         = toDoc $ evalExp e letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
 
    returnDoc      = text "fold"
                 <+> (parens fun
@@ -206,28 +204,28 @@ evalPreOpenAcc (Fold f e acc) letLevel aenv
 
 
 --TODO
-evalPreOpenAcc (Fold1 _f _acc) _letLevel _aenv
+evalPreOpenAcc (Fold1 _f _acc) _letLevel
  = RepaAcc $ text "<ERROR:Fold1>"
 
 
 --TODO
-evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel _aenv
+evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel
  = RepaAcc $ text "<ERROR:FoldSeg>"
 
 
 --TODO
-evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel _aenv
+evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel
  = RepaAcc $ text "<ERROR:Fold1Seg>"
 
 
 -- Current generated code will be grossly inefficient, will need to generate more
 -- efficient code later, but currently working
-evalPreOpenAcc (Scanl f e acc) letLevel aenv
+evalPreOpenAcc (Scanl f e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
-   exp         = toDoc $ evalExp     e   letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
+   exp         = toDoc $ evalExp     e   letLevel
 
 
    returnDoc   = text "traverse"
@@ -244,12 +242,12 @@ evalPreOpenAcc (Scanl f e acc) letLevel aenv
 
 -- Generated code is quite inefficient due to repeated computations
 -- TODO: Is probably incorrect will need to rewrite to do left scan
-evalPreOpenAcc (Scanl' f e acc) letLevel aenv
+evalPreOpenAcc (Scanl' f e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
-   exp         = toDoc $ evalExp     e   letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
+   exp         = toDoc $ evalExp     e   letLevel
 
    returnDoc   = parens (first $$ comma $$ second)
    first       = text "traverse"
@@ -264,11 +262,11 @@ evalPreOpenAcc (Scanl' f e acc) letLevel aenv
               $$ text "in newVal"
 
 
-evalPreOpenAcc (Scanl1 f acc) letLevel aenv
+evalPreOpenAcc (Scanl1 f acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
 
    returnDoc   = text "traverse"
              <+> (parens arr $$ text "(id)" $$ parens newValDoc)
@@ -281,12 +279,12 @@ evalPreOpenAcc (Scanl1 f acc) letLevel aenv
               $$ text "in newVal"
 
 
-evalPreOpenAcc (Scanr f e acc) letLevel aenv
+evalPreOpenAcc (Scanr f e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
-   exp         = toDoc $ evalExp     e   letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
+   exp         = toDoc $ evalExp     e   letLevel
 
    returnDoc   = text "traverse"
              <+> (parens arr $$ shapeDoc $$ parens newValDoc)
@@ -301,12 +299,12 @@ evalPreOpenAcc (Scanr f e acc) letLevel aenv
    last = parens $ text "size $ extent $" <+> arr
 
 
-evalPreOpenAcc (Scanr' f e acc) letLevel aenv
+evalPreOpenAcc (Scanr' f e acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
-   exp         = toDoc $ evalExp     e   letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
+   exp         = toDoc $ evalExp     e   letLevel
 
    returnDoc   = text "let res" <+> equals <+> text "traverse"
              <+> (parens arr $$ parens shapeDoc $$ parens newVarDoc)
@@ -330,11 +328,11 @@ evalPreOpenAcc (Scanr' f e acc) letLevel aenv
    last        = parens $ text "size $ extent $" <+> arr
 
 
-evalPreOpenAcc (Scanr1 f acc) letLevel aenv
+evalPreOpenAcc (Scanr1 f acc) letLevel
  = RepaAcc returnDoc
  where
-   RepaAcc fun = evalFun     f   letLevel aenv
-   RepaAcc arr = evalOpenAcc acc letLevel aenv
+   RepaAcc fun = evalFun     f   letLevel
+   RepaAcc arr = evalOpenAcc acc letLevel
 
    returnDoc   = text "traverse"
              <+> (parens arr $$ shapeDoc $$ parens newVarDoc)
@@ -350,13 +348,13 @@ evalPreOpenAcc (Scanr1 f acc) letLevel aenv
    last        = parens $ text "size $ extent $" <+> arr
 
 
-evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
+evalPreOpenAcc (Permute f dftAcc p acc) letLevel
  = RepaAcc $ returnDoc
  where
-   RepaAcc dftArrD = evalOpenAcc dftAcc letLevel aenv
-   RepaAcc srcArrD = evalOpenAcc acc    letLevel aenv
-   RepaAcc combD   = evalFun     f      letLevel aenv
-   RepaAcc permD   = evalFun     p      letLevel aenv
+   RepaAcc dftArrD = evalOpenAcc dftAcc letLevel
+   RepaAcc srcArrD = evalOpenAcc acc    letLevel
+   RepaAcc combD   = evalFun     f      letLevel
+   RepaAcc permD   = evalFun     p      letLevel
 
    returnDoc =
       text "let" <+> (text "srcArr =" <+> srcArrD
@@ -384,33 +382,33 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel aenv
 
 
 --TODO
-evalPreOpenAcc (Backpermute e p acc) letLevel aenv
+evalPreOpenAcc (Backpermute e p acc) letLevel
  = RepaAcc $ text "<ERROR:Backpermute>"
 
 --TODO
-evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel _aenv
+evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel
  = RepaAcc $ text "<ERROR:Stencil>"
 
 --TODO
-evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel _aenv
+evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel
  = RepaAcc $ text "<ERROR:Stencil2>"
 
-evalPreOpenAcc _ _ _ = RepaAcc $ text "<UNDEFINED>"
+evalPreOpenAcc _ _ = RepaAcc $ text "<UNDEFINED>"
 
 --------------------
 -- FUNCTION NODES --
 --------------------
 
-evalFun :: Fun aenv t -> Int-> Val aenv -> RepaAcc
-evalFun f letL aenv = evalOpenFun f 0 letL Empty aenv
+evalFun :: Fun aenv t -> Int -> RepaAcc
+evalFun f letL = evalOpenFun f 0 letL
 
-evalOpenFun :: OpenFun env aenv t -> Int -> Int -> Val env -> Val aenv -> RepaAcc
-evalOpenFun (Body e) lamL letL env aenv
- = RepaAcc $ toDoc $ evalOpenExp e lamL letL env aenv
-evalOpenFun (Lam f)  lamL letL env aenv
+evalOpenFun :: OpenFun env aenv t -> Int -> Int -> RepaAcc
+evalOpenFun (Body e) lamL letL
+ = RepaAcc $ toDoc $ evalOpenExp e lamL letL
+evalOpenFun (Lam f)  lamL letL
  = RepaAcc (text "\\" <> varName <+> text "->" <+> funS)
  where
-   RepaAcc funS = evalOpenFun f (lamL+1) letL (env `Push` (error "Lam")) aenv
+   RepaAcc funS = evalOpenFun f (lamL+1) letL
    varName = text "x" <> int lamL
 
 
@@ -420,104 +418,104 @@ evalOpenFun (Lam f)  lamL letL env aenv
 
 -- Evaluate an open expression
 evalOpenExp :: forall a env aenv .
-               OpenExp env aenv a -> Int -> Int -> Val env -> Val aenv -> RepaExp
+               OpenExp env aenv a -> Int -> Int -> RepaExp
 
-evalOpenExp (Var idx) lamL letL env _
+evalOpenExp (Var idx) lamL letL
    = RepaExp $ char 'x' <> int varNum
    where
       varNum = lamL - (getVarNum idx) - 1
 
-evalOpenExp (Const c) _ _ _ _
+evalOpenExp (Const c) _ _
    = RepaExp $ val <+> colon <> colon <+> typeS
    where
       val   = text $ show ((Sugar.toElt c) :: a)
       typeS = text $ (showsTypeRep $ typeOf ((Sugar.toElt c) :: a)) ""
 
-evalOpenExp (Tuple tup) lamL letL env aenv 
-   = evalTuple tup lamL letL env aenv
+evalOpenExp (Tuple tup) lamL letL
+   = evalTuple tup lamL letL
 
-evalOpenExp (Prj idx e) lamL letL env aenv 
+evalOpenExp (Prj idx e) lamL letL
    = RepaExp $ text "let" <+> parens prjS <+> equals <+> parens expS
            <+> text "in" <+> prjVarName
    where
       prjS = evalPrj (tupSize $ expType e) (tupIdx idx)
-      expS = toDoc $ evalOpenExp e lamL letL env aenv
+      expS = toDoc $ evalOpenExp e lamL letL
 
-evalOpenExp IndexNil _ _ _ _
+evalOpenExp IndexNil _ _
    = RepaExp $ char 'Z'
 
-evalOpenExp (IndexCons sh i) lamL letL env aenv 
+evalOpenExp (IndexCons sh i) lamL letL
    = RepaExp $ shS <+> text ":." <+> parens ix
    where
-      shS = toDoc $ evalOpenExp sh lamL letL env aenv
-      ix  = toDoc $ evalOpenExp i lamL letL env aenv 
+      shS = toDoc $ evalOpenExp sh lamL letL
+      ix  = toDoc $ evalOpenExp i lamL letL
 
-evalOpenExp (IndexHead ix) lamL letL env aenv 
+evalOpenExp (IndexHead ix) lamL letL
    = RepaExp $ text "case" <+> parens exp <+> text "of (_:.h) -> h"
    where
-      exp = toDoc $ evalOpenExp ix lamL letL env aenv
+      exp = toDoc $ evalOpenExp ix lamL letL
 
-evalOpenExp (IndexTail ix) lamL letL env aenv 
+evalOpenExp (IndexTail ix) lamL letL
    = RepaExp $ text "case" <+> parens exp <+> text "of (t:._) -> t"
    where
-      exp = toDoc $ evalOpenExp ix lamL letL env aenv
+      exp = toDoc $ evalOpenExp ix lamL letL
 
-evalOpenExp (IndexAny) _ _ _ _
+evalOpenExp (IndexAny) _ _
    = RepaExp $ text "Any"
 
-evalOpenExp (Cond c t e) lamL letL env aenv 
+evalOpenExp (Cond c t e) lamL letL
    = RepaExp $ text "if" <+> cond
   $$ (nest 1 $ text "then" <+> exp1)
   $$ (nest 1 $ text "else" <+> exp2)
    where
-      cond = toDoc $ evalOpenExp c lamL letL env aenv
-      exp1 = toDoc $ evalOpenExp t lamL letL env aenv
-      exp2 = toDoc $ evalOpenExp e lamL letL env aenv
+      cond = toDoc $ evalOpenExp c lamL letL
+      exp1 = toDoc $ evalOpenExp t lamL letL
+      exp2 = toDoc $ evalOpenExp e lamL letL
 
-evalOpenExp (PrimConst c) _ _ _ _
+evalOpenExp (PrimConst c) _ _
    = RepaExp $ evalPrimConst c
 
-evalOpenExp (PrimApp p arg) lamL letL env aenv 
+evalOpenExp (PrimApp p arg) lamL letL
    = RepaExp $ evalPrim p argS
    where
-      argS = evalOpenExp arg lamL letL env aenv
+      argS = evalOpenExp arg lamL letL
 
-evalOpenExp (IndexScalar acc ix) lamL letL env aenv 
+evalOpenExp (IndexScalar acc ix) lamL letL
    = RepaExp $ parens arr <+> char '!' <+> parens idx
    where
-      RepaAcc arr = evalOpenAcc acc letL aenv
-      RepaExp idx = evalOpenExp ix lamL letL env aenv
+      RepaAcc arr = evalOpenAcc acc letL
+      RepaExp idx = evalOpenExp ix lamL letL
 
-evalOpenExp (Shape acc) lamL letL env aenv 
+evalOpenExp (Shape acc) lamL letL
    = RepaExp $ text "extent" <+> parens arr
    where
-      RepaAcc arr = evalOpenAcc acc letL aenv
+      RepaAcc arr = evalOpenAcc acc letL
 
-evalOpenExp (Size acc) _lamL letL _env aenv 
+evalOpenExp (Size acc) _lamL letL
    = RepaExp $ text "Repa.size" <+> parens arr
    where
-      RepaAcc arr = evalOpenAcc acc letL aenv
+      RepaAcc arr = evalOpenAcc acc letL
 
-evalOpenExp _ _ _ _ _ = RepaExp $ text "<UNDEFINED>"
+evalOpenExp _ _ _ = RepaExp $ text "<UNDEFINED>"
 
 -- Evaluate a closed expression
 --
-evalExp :: PreExp OpenAcc aenv t -> Int -> Val aenv -> RepaExp
-evalExp e letL aenv = evalOpenExp e 0 letL Empty aenv
+evalExp :: PreExp OpenAcc aenv t -> Int -> RepaExp
+evalExp e letL = evalOpenExp e 0 letL
 
 ------------
 -- TUPLES --
 ------------
-evalTuple :: Tuple (OpenExp env aenv) t -> Int -> Int -> Val env -> Val aenv -> RepaExp
-evalTuple tup lamL letL env aenv = RepaTuple $ evalTuple' tup lamL letL env aenv
+evalTuple :: Tuple (OpenExp env aenv) t -> Int -> Int -> RepaExp
+evalTuple tup lamL letL = RepaTuple $ evalTuple' tup lamL letL
 
-evalTuple' :: Tuple (OpenExp env aenv) t -> Int -> Int -> Val env -> Val aenv -> [Doc]
-evalTuple' NilTup _ _ _env _aenv = []
-evalTuple' (e1 `SnocTup` e2) lamL letL env aenv
+evalTuple' :: Tuple (OpenExp env aenv) t -> Int -> Int -> [Doc]
+evalTuple' NilTup _ _ = []
+evalTuple' (e1 `SnocTup` e2) lamL letL
    = tup ++ [t]
    where
-      t   = toDoc $ evalOpenExp e2 lamL letL env aenv
-      tup = evalTuple' e1 lamL letL env aenv
+      t   = toDoc $ evalOpenExp e2 lamL letL
+      tup = evalTuple' e1 lamL letL
 
 ---------------------
 -- VARIABLE HELPER --
