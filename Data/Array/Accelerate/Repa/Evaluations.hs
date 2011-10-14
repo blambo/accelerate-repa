@@ -85,7 +85,7 @@ evalPreOpenAcc (Avar idx) letLevel
    var    = char 'y' <> int (letLevel - varNum - 1)
    varNum = getVarNum idx
 
-
+-- TODO: Possibly not currently correct
 evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -364,7 +364,7 @@ evalPreOpenAcc (Scanr1 f acc) letLevel
               $$ text "in newVal" 
    last        = parens $ text "size $ extent $" <+> arr
 
-
+--TODO: Needs to handle ignore case
 evalPreOpenAcc (Permute f dftAcc p acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -410,8 +410,11 @@ evalPreOpenAcc (Backpermute e p acc) letLevel
    RepaAcc srcArrD = evalOpenAcc acc letLevel
 
 --TODO
-evalPreOpenAcc (Stencil _sten _bndy _acc) _letLevel
- = RepaAcc $ text "<ERROR:Stencil>"
+evalPreOpenAcc (Stencil sten bndy acc) letLevel
+ = RepaAcc $ text "<ERROR:Stencil>" <+> funD
+ where
+   RepaAcc funD = evalFun sten letLevel
+   RepaAcc arrD = evalOpenAcc acc letLevel
 
 --TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel
