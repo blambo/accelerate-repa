@@ -415,6 +415,7 @@ evalPreOpenAcc (Stencil sten bndy acc) letLevel
  where
    RepaAcc funD = evalFun sten letLevel
    RepaAcc arrD = evalOpenAcc acc letLevel
+   bndyD        = evalBoundary bndy
 
 --TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel
@@ -562,6 +563,17 @@ printShape sh = text (printShape' $ Repr.shapeToList sh)
 printShape' :: [Int] -> String
 printShape' (x:xs) = (printShape' xs) ++ " :. (" ++ (show x) ++ " :: Int)"
 printShape' []     = "Z"
+
+-------------------------------
+-- EVAL BOUNDARY EXPRESSIONS --
+-------------------------------
+
+evalBoundary :: (Elt a) => Boundary (EltRepr a) -> Doc
+evalBoundary bndy = case bndy of
+                     Clamp      -> text "Clamp"
+                     Mirror     -> text "Mirror"
+                     Wrap       -> text "Wrap"
+                     Constant a -> text "Constant" <+> text (show ((Sugar.toElt a) :: a))
 
 -------------------------
 -- EVAL PRJ EXPRESSION --
