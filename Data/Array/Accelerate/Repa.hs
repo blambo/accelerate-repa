@@ -18,6 +18,7 @@ import Data.Array.Accelerate.AST
 import qualified Data.Array.Accelerate.Smart as Smart
 
 import Data.Array.Accelerate.Repa.Evaluations (evalAcc)
+import Data.Array.Accelerate.Repa.Stencil (stencilDoc)
 
 import Text.PrettyPrint
 
@@ -29,16 +30,20 @@ run :: Arrays a => Smart.Acc a -> String
 run acc = show $
    headS $$ (nest 1 (evalAcc $ Smart.convertAcc acc))
          $$ tailS
+         $+$ text " "
+         $$ stencilDoc
 
 headS :: Doc
 {-# INLINE headS #-}
 headS =
+   text "{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeOperators #-}" $+$
    text "import Data.Array.Repa as Repa" $+$
    text "import Data.Bits -- required for Prim ops" $+$
    text "import Data.Char -- required for Prim ops" $+$
    text "import Data.Int  -- required for Prim ops" $+$
    text "import Data.List (sortBy)  -- required for permute" $+$
    text "import Data.Ord  (compare) -- required for permute" $+$
+   text " " $+$
    text "main = putStrLn $ show $"
 
 tailS :: Doc

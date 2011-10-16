@@ -13,9 +13,29 @@ module Data.Array.Accelerate.Repa.Stencil
 
 import Text.PrettyPrint
 
+stencilDoc
+ =  classDefDoc
+ $$ baseStencils
+
 classDefDoc
  =  text "class (Elt e, Shape sh) => MyStencil sh e tup where"
- $$ nest 1 text "stencilData :: (sh -> e) -> Array sh e -> sh -> tup"
+ $$ nest 1 (text "stencilData :: (sh -> e) -> Array sh e -> sh -> tup")
+
+baseStencils
+ =  text "instance (Elt e) => MyStencil (Z:.Int) e (e, e, e) where"
+ $$ nest 1 ((stenData "Z:.idx")
+      <+> (lparen <+> rf "idx-1"
+        $$ comma  <+> rf "idx"
+        $$ comma  <+> rf "idx+1"
+        $$ rparen
+      $$ text "where"
+      $$ nest 1 (text "rf' id = rf (Z:.id)")))
+
+rf :: String -> Doc
+rf s = parens $ text "rf'" <+> parens (text s)
+
+stenData :: String -> Doc
+stenData s = text "stencilData rf arr" <+> parens (text s) <+> equals
 
 {-
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeOperators #-}

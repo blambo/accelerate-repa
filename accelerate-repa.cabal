@@ -24,3 +24,4 @@ Library
    Other-modules:   Data.Array.Accelerate.Repa.Evaluations
                     Data.Array.Accelerate.Repa.Evaluations.Prim
                     Data.Array.Accelerate.Repa.Traverse
+                    Data.Array.Accelerate.Repa.Stencil
