@@ -30,18 +30,20 @@ import Data.Array.Accelerate.Repa.Traverse
 -- ACC NODES --
 ---------------
 
-evalAcc :: Acc a -> Doc
+evalAcc :: forall a. Acc a -> Doc
 evalAcc acc
  = parsedS
  where
    RepaAcc parsedS = evalOpenAcc acc 0
 
 -- | Unpacks AST by removing 'OpenAcc' shell
-evalOpenAcc :: OpenAcc aenv a -> Int -> RepaAcc
+evalOpenAcc :: forall aenv a. OpenAcc aenv a -> Int -> RepaAcc
 evalOpenAcc (OpenAcc acc) = evalPreOpenAcc acc
 
 -- | Traverses over AST
-evalPreOpenAcc :: PreOpenAcc OpenAcc aenv a -> Int -> RepaAcc
+evalPreOpenAcc :: forall aenv a. PreOpenAcc OpenAcc aenv a
+               -> Int
+               -> RepaAcc
 
 evalPreOpenAcc (Let acc1 acc2) letLevel
  = RepaAcc returnDoc
@@ -411,11 +413,32 @@ evalPreOpenAcc (Backpermute e p acc) letLevel
 
 --TODO
 evalPreOpenAcc (Stencil sten bndy acc) letLevel
- = RepaAcc $ text "<ERROR:Stencil>" <+> funD
+ = RepaAcc $ returnDoc
  where
-   RepaAcc funD = evalFun sten letLevel
-   RepaAcc arrD = evalOpenAcc acc letLevel
-   bndyD        = evalBoundary bndy
+   RepaAcc funD = evalFun      sten letLevel
+   RepaAcc arrD = evalOpenAcc  acc  letLevel
+   bndyD        = empty --evalBoundary bndy --issue with type matching bndy
+
+   returnDoc    = letD $$ traverseD
+
+   letD = text "let" <+> (text "arr  =" <+> arrD
+                       $$ text "bndy =" <+> bndyD
+                       $$ text "sten =" <+> funD)
+       $$ text "in"
+   traverseD
+    = text "traverse"
+    <+> (text "arr"
+      $$ text "id"
+      $$ text "(sten . (stencilData (bound arr bndy (arrayExtent arr)) arr))")
+-- sten: PreFun acc aenv (stencil -> e')
+-- bndy: Boundary (EltRepr e)
+-- acc:  acc aenv (Array sh e)
+--
+-- let arr  = arrD
+--     bndy = bndyD
+--     sten = funD
+-- in
+-- (sten . (stencilData (bound arrD bndyD (arrayExtent arrD)) arrD))
 
 --TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel
@@ -568,7 +591,7 @@ printShape' []     = "Z"
 -- EVAL BOUNDARY EXPRESSIONS --
 -------------------------------
 
-evalBoundary :: (Elt a) => Boundary (EltRepr a) -> Doc
+evalBoundary :: forall a. (Elt a) => Boundary (EltRepr a) -> Doc
 evalBoundary bndy = case bndy of
                      Clamp      -> text "Clamp"
                      Mirror     -> text "Mirror"
