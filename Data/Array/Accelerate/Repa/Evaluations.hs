@@ -205,7 +205,6 @@ evalPreOpenAcc (Fold f e acc) letLevel
                  $$ parens arr)
 
 
---TODO
 evalPreOpenAcc (Fold1 f acc) letLevel
  = RepaAcc $ returnDoc
  where
