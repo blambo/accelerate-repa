@@ -47,15 +47,15 @@ stenData s = text "stencilData rf arr" <+> parens (text s) <+> equals
 
 bound
  = text "bound" <+> (text ":: (Shape sh, Elt a)"
-                  $$ text "=> Array sh a"
+                  $$ text "=> (sh -> a)"
                   $$ text "-> Boundary a"
                   $$ text "-> sh"
                   $$ text "-> sh"
                   $$ text "-> a")
-  $$ text "bound arr bndy sh ix ="
+  $$ text "bound lookup bndy sh ix ="
   $$ nest 1 (text "case bound' (listOfShape sh) (listOfShape ix) bndy of"
       $$ nest 1 (text "Left  val -> val"
-              $$ text "Right sh  -> arr ! (shapeOfList sh)"))
+              $$ text "Right sh  -> lookup (shapeOfList sh)"))
   $$ text "bound' :: [Int] -> [Int] -> Boundary a -> Either a [Int]"
   $$ text "bound' (sh:shs) (ix:ixs) bndy"
   $$ nest 1 (text "| ix < 0    ="

@@ -428,7 +428,8 @@ evalPreOpenAcc (Stencil sten bndy acc) letLevel
     = text "traverse"
     <+> (text "arr"
       $$ text "id"
-      $$ text "(sten . (stencilData (bound arr bndy (arrayExtent arr)) arr))")
+      -- $$ text "(sten . (stencilData (bound arr bndy (arrayExtent arr)) arr))")
+      $$ text "(\\lookup curr -> sten $ stencilData (bound lookup bndy (arrayExtent arr)) arr curr)")
 
 
 --TODO
