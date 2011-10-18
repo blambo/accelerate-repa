@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP, GADTs, BangPatterns, TypeOperators, PatternGuards #-}
 {-# LANGUAGE TypeFamilies, ScopedTypeVariables, FlexibleContexts #-}
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, RankNTypes #-}
 -- |
 -- Module     : Data.Array.Accelerate.Repa.Evaluations
 --
@@ -416,28 +416,20 @@ evalPreOpenAcc (Stencil sten bndy acc) letLevel
  where
    RepaAcc funD = evalFun      sten letLevel
    RepaAcc arrD = evalOpenAcc  acc  letLevel
-   bndyD        = empty --evalBoundary bndy --issue with type matching bndy
+   bndyD        = evalBoundary acc bndy
 
    returnDoc    = letD $$ traverseD
 
    letD = text "let" <+> (text "arr  =" <+> arrD
                        $$ text "bndy =" <+> bndyD
-                       $$ text "sten =" <+> funD)
+                       $$ text "sten =" <+> parens funD)
        $$ text "in"
    traverseD
     = text "traverse"
     <+> (text "arr"
       $$ text "id"
       $$ text "(sten . (stencilData (bound arr bndy (arrayExtent arr)) arr))")
--- sten: PreFun acc aenv (stencil -> e')
--- bndy: Boundary (EltRepr e)
--- acc:  acc aenv (Array sh e)
---
--- let arr  = arrD
---     bndy = bndyD
---     sten = funD
--- in
--- (sten . (stencilData (bound arrD bndyD (arrayExtent arrD)) arrD))
+
 
 --TODO
 evalPreOpenAcc (Stencil2 _sten _bndy1 _acc1 _bndy2 _acc2) _letLevel
@@ -590,12 +582,15 @@ printShape' []     = "Z"
 -- EVAL BOUNDARY EXPRESSIONS --
 -------------------------------
 
-evalBoundary :: forall a. (Elt a) => Boundary (EltRepr a) -> Doc
-evalBoundary bndy = case bndy of
-                     Clamp      -> text "Clamp"
-                     Mirror     -> text "Mirror"
-                     Wrap       -> text "Wrap"
-                     Constant a -> text "Constant" <+> text (show ((Sugar.toElt a) :: a))
+evalBoundary :: forall aenv sh e. (Elt e)
+             => OpenAcc aenv (Array sh e)
+             -> Boundary (EltRepr e)
+             -> Doc
+evalBoundary _ bndy = case bndy of
+                       Clamp      -> text "Clamp"
+                       Mirror     -> text "Mirror"
+                       Wrap       -> text "Wrap"
+                       Constant a -> text "Constant" <+> text (show ((Sugar.toElt a) :: e))
 
 -------------------------
 -- EVAL PRJ EXPRESSION --

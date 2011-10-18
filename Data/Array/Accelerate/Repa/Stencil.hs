@@ -16,6 +16,8 @@ import Text.PrettyPrint
 stencilDoc
  =  classDefDoc
  $$ baseStencils
+ $$ boundary
+ $$ bound
 
 classDefDoc
  =  text "class (Elt e, Shape sh) => MyStencil sh e tup where"
@@ -31,11 +33,48 @@ baseStencils
       $$ text "where"
       $$ nest 1 (text "rf' id = rf (Z:.id)")))
 
+boundary
+ = text "data Boundary a" <+> (text "= Clamp"
+                            $$ text "| Mirror"
+                            $$ text "| Wrap"
+                            $$ text "| Constant a")
+
 rf :: String -> Doc
 rf s = parens $ text "rf'" <+> parens (text s)
 
 stenData :: String -> Doc
 stenData s = text "stencilData rf arr" <+> parens (text s) <+> equals
+
+bound
+ = text "bound" <+> (text ":: (Shape sh, Elt a)"
+                  $$ text "=> Array sh a"
+                  $$ text "-> Boundary a"
+                  $$ text "-> sh"
+                  $$ text "-> sh"
+                  $$ text "-> a")
+  $$ text "bound arr bndy sh ix ="
+  $$ nest 1 (text "case bound' (listOfShape sh) (listOfShape ix) bndy of"
+      $$ nest 1 (text "Left  val -> val"
+              $$ text "Right sh  -> arr ! (shapeOfList sh)"))
+  $$ text "bound' :: [Int] -> [Int] -> Boundary a -> Either a [Int]"
+  $$ text "bound' (sh:shs) (ix:ixs) bndy"
+  $$ nest 1 (text "| ix < 0    ="
+            <+> (text "case bndy of"
+               $$ nest 1 (text "Clamp     -> bound' shs ixs bndy `addDim` 0"
+                       $$ text "Mirror    -> bound' shs ixs bndy `addDim` (-ix)"
+                       $$ text "Wrap      -> bound' shs ixs bndy `addDim` (sh+ix)"
+                       $$ text "Constant e -> Left e"))
+          $$ text "| ix >= sh  ="
+            <+> (text "case bndy of"
+               $$ nest 1 (text "Clamp     -> bound' shs ixs bndy `addDim` (sh-1)"
+                       $$ text "Mirror    -> bound' shs ixs bndy `addDim` (sh-(ix-sh+2))"
+                       $$ text "Wrap      -> bound' shs ixs bndy `addDim` (ix-sh)"
+                       $$ text "Constant e -> Left e"))
+          $$ text "| otherwise = bound' shs ixs bndy `addDim` ix"
+          $$ text "where"
+            $$ nest 1 (text "addDim (Right ds) d = Right (d:ds)"
+                    $$ text "addDim (Left  e)  _ = Left  e"))
+  $$ text "bound' [] [] _ = Right []"
 
 {-
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeOperators #-}
@@ -111,7 +150,7 @@ bound' :: [Int] -> [Int] -> Boundary a -> Either a [Int]
 bound' (sh:shs) (ix:ixs) bndy
    | ix < 0    = case bndy of
                   Clamp     -> bound' shs ixs bndy `addDim` 0
-                  Mirror    -> bound' shs ixs bndy `addDim` (-1)
+                  Mirror    -> bound' shs ixs bndy `addDim` (-ix)
                   Wrap      -> bound' shs ixs bndy `addDim` (sh+ix)
                   Constant e -> Left e
    | ix >= sh  = case bndy of
