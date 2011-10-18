@@ -7,7 +7,7 @@ main = do
    putStrLn "---STENCIL---"
    putStrLn $ Repa.run $ myStencil
    --putStrLn $ show $ Interpreter.run $ myStencil
-   putStrLn $ show $ Repa.run $ myStencil
+   putStrLn $ Repa.run $ myStencil
    -- stencil2
 
 myStencil :: Acc (Vector Int)
