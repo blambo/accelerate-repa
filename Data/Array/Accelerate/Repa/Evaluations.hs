@@ -410,7 +410,7 @@ evalPreOpenAcc (Backpermute e p acc) letLevel
    RepaAcc permD   = evalFun     p   letLevel
    RepaAcc srcArrD = evalOpenAcc acc letLevel
 
---TODO
+
 evalPreOpenAcc (Stencil sten bndy acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -447,13 +447,12 @@ evalFun f letL = evalOpenFun f 0 letL
 
 evalOpenFun :: OpenFun env aenv t -> Int -> Int -> RepaAcc
 evalOpenFun (Body e) lamL letL
- = RepaAcc $ toDoc $ evalOpenExp e lamL letL
+ = RepaAcc $ parens (toDoc $ evalOpenExp e lamL letL) <+> colon <> colon <+> (expToString e)
 evalOpenFun (Lam f)  lamL letL
  = RepaAcc (text "\\" <> varName <+> text "->" <+> funS)
  where
    RepaAcc funS = evalOpenFun f (lamL+1) letL
    varName = text "x" <> int lamL
-
 
 ----------------------
 -- EXPRESSION NODES --
@@ -609,6 +608,27 @@ evalPrj' tup idx = evalPrj' (tup-1) (idx-1) <+> char '_'   <> comma
 
 prjVarName :: Doc
 prjVarName = text "tVar"
+
+
+-----------------------------
+-- TYPING HELPER FUNCTIONS --
+-----------------------------
+
+-- Creates a Doc for the given expression
+expToString :: OpenExp env aenv a -> Doc
+expToString exp = tupleTypeToString $ expType exp
+
+tupleTypeToString :: TupleType a -> Doc
+tupleTypeToString UnitTuple = empty
+tupleTypeToString (PairTuple a b) = let aDoc = tupleTypeToString a
+                                        bDoc = tupleTypeToString b
+                                    in
+                                       if isEmpty aDoc
+                                          then bDoc
+                                          else if isEmpty bDoc
+                                             then aDoc
+                                             else aDoc <> comma <+> bDoc
+tupleTypeToString (SingleTuple a) = text $ show a
 
 -- Returns the number of members in a tuple
 tupSize :: TupleType a -> Int
