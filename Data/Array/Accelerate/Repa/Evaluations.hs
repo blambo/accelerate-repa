@@ -428,8 +428,7 @@ evalPreOpenAcc (Stencil sten bndy acc) letLevel
     = text "traverse"
     <+> (text "arr"
       $$ text "id"
-      -- $$ text "(sten . (stencilData (bound arr bndy (arrayExtent arr)) arr))")
-      $$ text "(\\lookup curr -> sten $ stencilData (bound lookup bndy (arrayExtent arr)) arr curr)")
+      $$ text "(\\lookup curr -> sten $ stencilData (bound lookup bndy (arrayExtent arr)) curr)")
 
 
 --TODO
@@ -462,10 +461,11 @@ evalOpenFun (Lam f)  lamL letL
 evalOpenExp :: forall a env aenv .
                OpenExp env aenv a -> Int -> Int -> RepaExp
 
-evalOpenExp (Var idx) lamL letL
-   = RepaExp $ char 'x' <> int varNum
+evalOpenExp var@(Var idx) lamL letL
+   = RepaExp $ parens (char 'x' <> int varNum <+> colon <> colon <+> typeD)
    where
       varNum = lamL - (getVarNum idx) - 1
+      typeD  = expToString (var)
 
 evalOpenExp (Const c) _ _
    = RepaExp $ val <+> colon <> colon <+> typeS
@@ -480,7 +480,7 @@ evalOpenExp (Prj idx e) lamL letL
    = RepaExp $ text "let" <+> parens prjS <+> equals <+> parens expS
            <+> text "in" <+> prjVarName
    where
-      prjS = evalPrj (tupSize $ expType e) (tupIdx idx)
+      prjS = evalPrj (tupSize $ parseTupleType $ expType e) (tupIdx idx)
       expS = toDoc $ evalOpenExp e lamL letL
 
 evalOpenExp IndexNil _ _
@@ -616,26 +616,87 @@ prjVarName = text "tVar"
 
 -- Creates a Doc for the given expression
 expToString :: OpenExp env aenv a -> Doc
-expToString exp = tupleTypeToString $ expType exp
+expToString exp = parens $ tupleTypeToString $ expType exp
 
 tupleTypeToString :: TupleType a -> Doc
 tupleTypeToString UnitTuple = empty
-tupleTypeToString (PairTuple a b) = let aDoc = tupleTypeToString a
-                                        bDoc = tupleTypeToString b
-                                    in
-                                       if isEmpty aDoc
-                                          then bDoc
-                                          else if isEmpty bDoc
-                                             then aDoc
-                                             else aDoc <> comma <+> bDoc
+tupleTypeToString (PairTuple a b) =  tupleType'ToString $ parseTupleType (PairTuple a b)
 tupleTypeToString (SingleTuple a) = text $ show a
 
--- Returns the number of members in a tuple
-tupSize :: TupleType a -> Int
-tupSize UnitTuple       = 0
-tupSize (PairTuple a b) = (tupSize a) + (tupSize b)
-tupSize (SingleTuple _) = 1
+tupleType'ToString :: TupleType' a -> Doc
+tupleType'ToString UnitTuple' = empty
+tupleType'ToString (Single a) = text $ show a
+tupleType'ToString (FlatTuple a b)
+ = case a of
+   (FlatTuple _ _) -> tupleType'ToString a <> comma <+> tupleType'ToString b
+   UnitTuple'      -> tupleType'ToString b
+   otherwise       -> error "Unknown print case"
+tupleType'ToString (NestedTuple i a b)
+ = case a of
+   (FlatTuple _ _)      -> parens (tupleType'ToString a)
+                        <> comma <+> parens (tupleType'ToString b)
+   (NestedTuple i' _ _) -> if i == i'
+                           then tupleType'ToString a <> comma <+> parens (tupleType'ToString b)
+                           else if i == (i'+1)
+                                 then lparen <> 
+                                    parens (tupleType'ToString a) <> comma
+                                    <+> parens (tupleType'ToString b)
+                                 else error "Unknown print case"
+   otherwise            -> error "Unknown print case"
 
+-- New tuple type for annotating nesting of tuples
+data TupleType' a where
+   UnitTuple'  ::                                        TupleType' ()
+   Single      ::                        ScalarType a -> TupleType' a
+   FlatTuple   ::        TupleType' a -> TupleType' b -> TupleType' (a, b)
+   NestedTuple :: Int -> TupleType' a -> TupleType' b -> TupleType' (a, b)
+
+parseTupleType :: TupleType a -> TupleType' a
+parseTupleType UnitTuple
+ = UnitTuple'
+parseTupleType (SingleTuple a)
+ = Single a
+parseTupleType (PairTuple a' b')
+ = let a = parseTupleType a'
+       b = parseTupleType b'
+   in
+      case a of
+       UnitTuple'          -> FlatTuple a b
+       (Single _)          -> error "Currently unknown Tuple indent case"
+       (FlatTuple _ _)     -> case b of
+                               UnitTuple'          -> error "Currently unknown Tuple indent case"
+                               (Single _)          -> FlatTuple a b
+                               (FlatTuple _ _)     -> NestedTuple 1 a b
+                               (NestedTuple i _ _) -> error "Currently unknown Tuple indent case"
+       (NestedTuple i _ _) -> case b of
+                               UnitTuple'           -> error "Currently unknown Tuple indent case"
+                               (Single _)           -> error "Currently unknown Tuple indent case"
+                               (FlatTuple _ _)      -> case i of
+                                                         1 -> NestedTuple 1 a b
+                                                         otherwise -> error "Currently unknown Tuple indent case"
+                               (NestedTuple i' _ _) -> if i == i'
+                                                         then NestedTuple (i+1) a b
+                                                         else if i == (i' + 1)
+                                                               then NestedTuple i a b
+                                                               else error "Currently unknown Tuple indent case"
+
+-- Returns the number of members in a tuple
+tupSize :: TupleType' a -> Int
+tupSize UnitTuple'          = 0
+tupSize (Single _)          = 0
+tupSize (FlatTuple a _)     = 1 + case a of
+                                 (FlatTuple _ _) -> tupSize a
+                                 otherwise       -> 0
+tupSize (NestedTuple i a _) = 1 + case a of
+                                 (NestedTuple i' _ _) -> if i == i'
+                                                         then tupSize a
+                                                         else if i == (i'+1)
+                                                               then 1
+                                                               else 0
+                                 (FlatTuple _ _)      -> if i == 1
+                                                         then 1
+                                                         else 0
+                                 otherwise            -> 0
 -- Returns how many members of a tuple from the 'left' we are referencing
 tupIdx :: TupleIdx t e -> Int
 tupIdx (SuccTupIdx idx) = 1 + tupIdx idx
