@@ -11,5 +11,11 @@ main = do
    putStrLn $ Repa.run $ Acc.fold1 (+) $ generate (index1 3) (\x -> constant (1 :: Int))
    --foldSeg
    putStrLn "---FOLDSEG---"
+   putStrLn $ Repa.run $ Acc.foldSeg (+) (constant 0) arr1 arr1seg
    --fold1Seg
    putStrLn "---FOLD1SEG---"
+
+
+arr1 = use $ fromList (Z:.10) ([1,2,3,4,5,6,7,8,9,10] :: [Int])
+
+arr1seg = use $ fromList (Z:.3) ([2,3,5])
