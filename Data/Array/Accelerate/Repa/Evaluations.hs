@@ -227,12 +227,46 @@ evalPreOpenAcc (Fold1 f acc) letLevel
                    $$ genElemD)
 
 --TODO
-evalPreOpenAcc (FoldSeg _f _e _acc1 _acc2) _letLevel
- = RepaAcc $ text "<ERROR:FoldSeg>"
+evalPreOpenAcc (FoldSeg f e acc1 acc2) letLevel
+ = RepaAcc $ returnDoc
+ where
+   RepaAcc funD = evalFun f letLevel
+   expD         = toDoc $ evalExp e letLevel
+   RepaAcc arrD = evalOpenAcc acc1 letLevel
+   RepaAcc segD = evalOpenAcc acc2 letLevel
 
+   returnDoc    = letD $$ foldSegD
+
+   letD = text "let" <+> (text "arr =" <+> arrD
+                       $$ text "f   =" <+> funD
+                       $$ text "seg =" <+> segD
+                       $$ text "e   =" <+> expD
+                       $$ helpers)
+       $$ text "in"
+   foldSegD = text "traverse arr (\\_ -> (sh:.ix)) foldOne"
+
+   helpers = text "(sh:._) = arrayExtent arr"
+          $$ text "(_:.ix) = arrayExtent seg"
+          $$ text "starts :: Array DIM1 Int"
+          $$ text "starts ="
+            <+> (text "let res ="
+               <+> (text "traverse seg (\\(Z:.i) -> (Z:.(i+1)))"
+                  $$ parens (text "let newVal orig (Z:.pos)"
+                     <+> (text "| pos == 0  = 0"
+                       $$ text "| otherwise = (newVal orig (Z:.(pos-1))) + (orig (Z:.(pos-1)))")
+                     $$ text "in newVal"))
+            $$ text "in"
+            $$ nest 1 (text "traverse res (\\(Z:.i) -> (Z:.(i-1))) (\\orig (Z:.pos) -> orig (Z:.pos))"))
+         $$ text "foldOne lookup (sh:.ix) ="
+            <+> (text "let" <+> (text "start = starts ! (Z:.ix)"
+                              $$ text "len   = seg    ! (Z:.ix)")
+             $$ text "in foldSeg' sh e start (start+len)")
+         $$ text "foldSeg' sh val start end"
+         $$ nest 1 (text "| start >= end = val"
+                 $$ text "| otherwise    = foldSeg' sh (f val (arr ! (sh:.start))) (start+1) end")
 
 --TODO
-evalPreOpenAcc (Fold1Seg _f _acc1 _acc2) _letLevel
+evalPreOpenAcc (Fold1Seg f acc1 acc2) letLevel
  = RepaAcc $ text "<ERROR:Fold1Seg>"
 
 
