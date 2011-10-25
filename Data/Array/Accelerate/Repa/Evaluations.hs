@@ -495,7 +495,7 @@ evalPreOpenAcc (Stencil sten bndy acc) letLevel
       $$ text "id"
       $$ text "(\\lookup curr -> sten $ stencilData (bound lookup bndy (arrayExtent arr)) curr)")
 
--- TODO
+
 evalPreOpenAcc (Stencil2 sten bndy1 acc1 bndy2 acc2) letLevel
  = RepaAcc $ returnDoc
  where
@@ -513,7 +513,14 @@ evalPreOpenAcc (Stencil2 sten bndy1 acc1 bndy2 acc2) letLevel
                        $$ text "bndy2 =" <+> bndy2D
                        $$ text "sten  =" <+> parens stenD)
        $$ text "in"
-   traverseD = empty
+   traverseD
+    = text "traverse2"
+    <+> (text "arr1"
+      $$ text "arr2"
+      $$ text "(\\a _ -> a)"
+      $$ parens (text "\\lookup1 lookup2 curr ->"
+         <+> (text "sten" <+> (parens (text "stencilData (bound lookup1 bndy1 (arrayExtent arr1)) curr")
+                           $$  parens (text "stencilData (bound lookup2 bndy2 (arrayExtent arr2)) curr")))))
 
 evalPreOpenAcc _ _ = RepaAcc $ text "<UNDEFINED>"
 

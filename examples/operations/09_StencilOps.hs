@@ -10,9 +10,14 @@ main = do
    --putStrLn $ show $ Interpreter.run $ myStencil
    putStrLn $ Repa.run $ my2DStencil
    -- stencil2
+   putStrLn "---STENCIL2---"
+   putStrLn $ Repa.run $ my1DStencil2
 
 my1DStencil :: Acc (Vector Int)
 my1DStencil = stencil myFun (Constant 0) $ the1DArray
+
+my1DStencil2 :: Acc (Vector Int)
+my1DStencil2 = stencil2 myFun2 (Constant 0) the1DArray (Constant 0) the1DArray
 
 the1DArray :: Acc (Vector Int)
 the1DArray = generate (index1 10) (\_ -> constant 1)
@@ -27,6 +32,8 @@ index2 :: Exp (Z:.Int) -> Int -> Exp (Z:.Int:.Int)
 index2 sh x = lift ( sh :. x )
 
 myFun (a,b,c) = a + b + c
+
+myFun2 (a1,b1,c1) (a,b,c) = a + b + c + a1 + b1 + c1
 
 my2DFun :: Stencil5x3 Int -> Exp Int
 my2DFun  ( (a1, a2, a3, b1, b2)
