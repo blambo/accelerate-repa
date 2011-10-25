@@ -323,8 +323,6 @@ evalPreOpenAcc (Scanl f e acc) letLevel
               $$ text "in newVal"
 
 
--- Generated code is quite inefficient due to repeated computations
--- TODO: Is probably incorrect will need to rewrite to do left scan
 evalPreOpenAcc (Scanl' f e acc) letLevel
  = RepaAcc returnDoc
  where
@@ -332,10 +330,15 @@ evalPreOpenAcc (Scanl' f e acc) letLevel
    RepaAcc arr = evalOpenAcc acc letLevel
    exp         = toDoc $ evalExp     e   letLevel
 
-   returnDoc   = parens (first $$ comma $$ second)
-   first       = text "traverse"
-             <+> (parens arr $$ text "(id)" $$ parens newValDoc)
-   second      = text "fold" <+> parens fun <+> parens exp <+> parens arr
+   returnDoc   = text "let res = traverse" <+> (parens arr $$ parens shapeDoc $$ parens newValDoc)
+               $$ text "in" <+> tuple
+
+   tuple  = parens (first <> comma <+> second)
+   first  = text "traverse res (\\(Z:.i) -> (Z:.(i-1))) (\\orig sh -> orig sh)"
+   second = text "fromList Z [(res!(Z:.((size $ extent res)-1)))]"
+
+   shapeDoc = text "\\(Z:.i) -> (Z:.(i+1))"
+
    newValDoc   = text "let newVal orig (Z:.pos)"
              <+> ((text "| pos == 0" <+> equals <+> exp)
               $$ nest 1 (text "| otherwise" <+> equals
