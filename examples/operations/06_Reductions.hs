@@ -14,6 +14,7 @@ main = do
    putStrLn $ Repa.run $ Acc.foldSeg (+) (constant 0) arr1 arr1seg
    --fold1Seg
    putStrLn "---FOLD1SEG---"
+   putStrLn $ Repa.run $ Acc.fold1Seg (+) arr1 arr1seg
 
 
 arr1 = use $ fromList (Z:.10) ([1,2,3,4,5,6,7,8,9,10] :: [Int])

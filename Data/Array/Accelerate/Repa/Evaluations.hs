@@ -226,7 +226,7 @@ evalPreOpenAcc (Fold1 f acc) letLevel
                    $$ newShapeD
                    $$ genElemD)
 
---TODO
+
 evalPreOpenAcc (FoldSeg f e acc1 acc2) letLevel
  = RepaAcc $ returnDoc
  where
@@ -265,10 +265,41 @@ evalPreOpenAcc (FoldSeg f e acc1 acc2) letLevel
          $$ nest 1 (text "| start >= end = val"
                  $$ text "| otherwise    = foldSeg' sh (f val (arr ! (sh:.start))) (start+1) end")
 
---TODO
 evalPreOpenAcc (Fold1Seg f acc1 acc2) letLevel
- = RepaAcc $ text "<ERROR:Fold1Seg>"
+ = RepaAcc $ returnDoc
+ where
+   RepaAcc funD = evalFun f letLevel
+   RepaAcc arrD = evalOpenAcc acc1 letLevel
+   RepaAcc segD = evalOpenAcc acc2 letLevel
 
+   returnDoc    = letD $$ fold1SegD
+
+   letD = text "let" <+> (text "arr =" <+> arrD
+                       $$ text "f   =" <+> funD
+                       $$ text "seg =" <+> segD
+                       $$ helpers)
+       $$ text "in"
+   fold1SegD = text "traverse arr (\\_ -> (sh:.ix)) foldOne"
+
+   helpers = text "(sh:._) = arrayExtent arr"
+          $$ text "(_:.ix) = arrayExtent seg"
+          $$ text "starts :: Array DIM1 Int"
+          $$ text "starts ="
+            <+> (text "let res ="
+               <+> (text "traverse seg (\\(Z:.i) -> (Z:.(i+1)))"
+                  $$ parens (text "let newVal orig (Z:.pos)"
+                     <+> (text "| pos == 0  = 0"
+                       $$ text "| otherwise = (newVal orig (Z:.(pos-1))) + (orig (Z:.(pos-1)))")
+                     $$ text "in newVal"))
+            $$ text "in"
+            $$ nest 1 (text "traverse res (\\(Z:.i) -> (Z:.(i-1))) (\\orig (Z:.pos) -> orig (Z:.pos))"))
+         $$ text "foldOne lookup (sh:.ix) ="
+            <+> (text "let" <+> (text "start = starts ! (Z:.ix)"
+                              $$ text "len   = seg    ! (Z:.ix)")
+             $$ text "in foldSeg' sh (arr ! (sh:.start)) (start+1) (start+len)")
+         $$ text "foldSeg' sh val start end"
+         $$ nest 1 (text "| start >= end = val"
+                 $$ text "| otherwise    = foldSeg' sh (f val (arr ! (sh:.start))) (start+1) end")
 
 -- Current generated code will be grossly inefficient, will need to generate more
 -- efficient code later, but currently working
