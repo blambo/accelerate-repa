@@ -433,7 +433,7 @@ evalPreOpenAcc (Scanr1 f acc) letLevel
               $$ text "in newVal" 
    last        = parens $ text "size $ extent $" <+> arr
 
---TODO: Needs to handle ignore case
+
 evalPreOpenAcc (Permute f dftAcc p acc) letLevel
  = RepaAcc $ returnDoc
  where

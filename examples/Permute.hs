@@ -12,7 +12,9 @@ main = do
 comb = (+)
 
 perm :: Exp (Z:. Int:. Int) -> Exp (Z:. Int)
-perm ix = let (Z:.y:.(x :: Exp Int)) = unlift ix in (index1 y)
+perm ix = let (Z:.y:.(x :: Exp Int)) = unlift ix
+          in
+             (?) (x Acc.==* 1) ((ignore), (index1 y))
 
 dftArr :: Acc (Array DIM1 Int)
 dftArr = generate (index1 5) (\_ -> 0)
