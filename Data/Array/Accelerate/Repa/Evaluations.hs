@@ -718,21 +718,20 @@ tupleType'ToString UnitTuple' = empty
 tupleType'ToString (Single a) = text $ show a
 tupleType'ToString (FlatTuple a b)
  = case a of
-   (FlatTuple _ _) -> tupleType'ToString a <> comma <+> tupleType'ToString b
-   UnitTuple'      -> tupleType'ToString b
-   otherwise       -> error "Unknown print case"
+   UnitTuple' -> parens (tupleType'ToString b)
+   otherwise  -> tupleType'ToString a 
+              <> comma <+> parens (tupleType'ToString b)
 tupleType'ToString (NestedTuple i a b)
  = case a of
    (FlatTuple _ _)      -> parens (tupleType'ToString a)
                         <> comma <+> parens (tupleType'ToString b)
    (NestedTuple i' _ _) -> if i == i'
-                           then tupleType'ToString a <> comma <+> parens (tupleType'ToString b)
-                           else if i == (i'+1)
-                                 then lparen <> 
-                                    parens (tupleType'ToString a) <> comma
-                                    <+> parens (tupleType'ToString b)
-                                 else error "Unknown print case"
-   otherwise            -> error "Unknown print case"
+                           then tupleType'ToString a 
+                             <> comma <+> parens (tupleType'ToString b)
+                           else parens (tupleType'ToString a)
+                             <> comma <+> parens (tupleType'ToString b)
+   otherwise            -> parens (tupleType'ToString a)
+                        <> comma <+> parens (tupleType'ToString b)
 
 -- New tuple type for annotating nesting of tuples
 data TupleType' a where
@@ -754,21 +753,17 @@ parseTupleType (PairTuple a' b')
        UnitTuple'          -> FlatTuple a b
        (Single _)          -> error "Currently unknown Tuple indent case"
        (FlatTuple _ _)     -> case b of
-                               UnitTuple'          -> error "Currently unknown Tuple indent case"
+                               UnitTuple'          -> FlatTuple a b
                                (Single _)          -> FlatTuple a b
                                (FlatTuple _ _)     -> NestedTuple 1 a b
-                               (NestedTuple i _ _) -> error "Currently unknown Tuple indent case"
+                               (NestedTuple _ _ _) -> FlatTuple a b
        (NestedTuple i _ _) -> case b of
-                               UnitTuple'           -> error "Currently unknown Tuple indent case"
-                               (Single _)           -> error "Currently unknown Tuple indent case"
-                               (FlatTuple _ _)      -> case i of
-                                                         1 -> NestedTuple 1 a b
-                                                         otherwise -> error "Currently unknown Tuple indent case"
+                               UnitTuple'           -> NestedTuple i a b
+                               (Single _)           -> NestedTuple i a b
+                               (FlatTuple _ _)      -> NestedTuple i a b
                                (NestedTuple i' _ _) -> if i == i'
                                                          then NestedTuple (i+1) a b
-                                                         else if i == (i' + 1)
-                                                               then NestedTuple i a b
-                                                               else error "Currently unknown Tuple indent case"
+                                                         else NestedTuple i a b
 
 -- Returns the number of members in a tuple
 tupSize :: TupleType' a -> Int
