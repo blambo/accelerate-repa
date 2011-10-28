@@ -70,6 +70,7 @@ baseStencils
       $$ text "where"
       $$ nest 1 (text "rf' id = rf (Z:.id)"))) 
 
+
 nestedStencils
  = text "instance" <+> parens (nestStenClass 3)
                    <+> text "=> MyStencil (sh:.Int:.Int) a (row1, row2, row3) where"
@@ -80,6 +81,49 @@ nestedStencils
         $$ rparen
       $$ text "where"
       $$ nest 1 (text "rf' d ds = rf (ds :. d)")))
+
+ $$ text "instance" <+> parens (nestStenClass 5)
+                    <+> text "=> MyStencil (sh:.Int:.Int) a (row1, row2, row3, row4, row5) where"
+ $$ nest 1 ((stenData "ix:.i")
+      <+> (lparen <+> text "stencilData" <+> rf "i-2" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i"   <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+2" <+> text "ix"
+        $$ rparen
+      $$ text "where"
+      $$ nest 1 (text "rf' d ds = rf (ds :. d)")))
+
+ $$ text "instance" <+> parens (nestStenClass 7)
+                    <+> text "=> MyStencil (sh:.Int:.Int) a (row1, row2, row3, row4, row5, row6, row7) where"
+ $$ nest 1 ((stenData "ix:.i")
+      <+> (lparen <+> text "stencilData" <+> rf "i-3" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-2" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i"   <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+2" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+3" <+> text "ix"
+        $$ rparen
+      $$ text "where"
+      $$ nest 1 (text "rf' d ds = rf (ds :. d)")))
+
+ $$ text "instance" <+> parens (nestStenClass 9)
+                    <+> text "=> MyStencil (sh:.Int:.Int) a (row1, row2, row3, row4, row5, row6, row7, row8, row9) where"
+ $$ nest 1 ((stenData "ix:.i")
+      <+> (lparen <+> text "stencilData" <+> rf "i-4" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-3" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-2" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i-1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i"   <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+1" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+2" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+3" <+> text "ix"
+        $$ comma  <+> text "stencilData" <+> rf "i+4" <+> text "ix"
+        $$ rparen
+      $$ text "where"
+      $$ nest 1 (text "rf' d ds = rf (ds :. d)")))
+
 
 boundary
  = text "data Boundary a" <+> (text "= Clamp"
