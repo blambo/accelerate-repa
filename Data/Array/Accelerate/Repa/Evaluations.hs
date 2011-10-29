@@ -166,10 +166,13 @@ evalPreOpenAcc (Replicate sliceIndex slix acc) letLevel
 
    returnDoc    = text "extend" <+> parens slixD <+> parens arrD
 
---TODO
-evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel
- = RepaAcc $ text "<ERROR:Index>"
+evalPreOpenAcc (Index sliceIndex acc slix) letLevel
+ = RepaAcc $ returnDoc
+ where
+   slixD        = toDoc $ evalExp slix letLevel
+   RepaAcc arrD = evalOpenAcc acc letLevel
 
+   returnDoc    = text "slice" <+> parens arrD <+> parens slixD
 
 evalPreOpenAcc (Map f acc) letLevel
  = RepaAcc returnDoc
