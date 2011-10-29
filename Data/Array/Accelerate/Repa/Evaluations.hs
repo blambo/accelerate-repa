@@ -159,9 +159,13 @@ evalPreOpenAcc (Generate sh f) letLevel
 
 
 --TODO
-evalPreOpenAcc (Replicate _sliceIndex _slix _acc) _letLevel
- = RepaAcc $ text "<ERROR:Replicate>"
+evalPreOpenAcc (Replicate sliceIndex slix acc) letLevel
+ = RepaAcc $ returnDoc
+ where
+   slixD        = toDoc $ evalExp slix letLevel
+   RepaAcc arrD = evalOpenAcc acc letLevel
 
+   returnDoc    = text "extend" <+> parens slixD <+> parens arrD
 
 --TODO
 evalPreOpenAcc (Index _sliceIndex _acc _slix) _letLevel
@@ -558,9 +562,16 @@ evalOpenExp var@(Var idx) lamL letL
       typeD  = expToString (var)
 
 evalOpenExp (Const c) _ _
-   = RepaExp $ val <+> colon <> colon <+> typeS
+   = RepaExp $ val
    where
-      val   = text $ show ((Sugar.toElt c) :: a)
+      val   = let val' = show ((Sugar.toElt c) :: a)
+              in case val' of
+                  "All" -> text "All"
+                  otherwise -> text val'
+                                        <+> colon
+                                        <>  colon
+                                        <+> typeS
+
       typeS = text $ (showsTypeRep $ typeOf ((Sugar.toElt c) :: a)) ""
 
 evalOpenExp (Tuple tup) lamL letL
