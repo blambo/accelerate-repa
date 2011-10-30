@@ -566,15 +566,15 @@ evalOpenExp var@(Var idx) lamL letL
 evalOpenExp (Const c) _ _
    = RepaExp $ val
    where
-      val   = let val' = show ((Sugar.toElt c) :: a)
-              in case val' of
-                  "All" -> text "All"
-                  otherwise -> text val'
+      val   = let val' = text $ show ((Sugar.toElt c) :: a)
+              in case typeS of
+                  ('D':'a':'t':'a':_) -> val'
+                  otherwise           -> val'
                                         <+> colon
                                         <>  colon
-                                        <+> typeS
+                                        <+> (text typeS)
 
-      typeS = text $ (showsTypeRep $ typeOf ((Sugar.toElt c) :: a)) ""
+      typeS = (showsTypeRep $ typeOf ((Sugar.toElt c) :: a)) ""
 
 evalOpenExp (Tuple tup) lamL letL
    = evalTuple tup lamL letL
