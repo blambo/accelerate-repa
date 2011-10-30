@@ -609,9 +609,9 @@ evalOpenExp (IndexAny) _ _
    = RepaExp $ text "Any"
 
 evalOpenExp (Cond c t e) lamL letL
-   = RepaExp $ text "if" <+> cond
-  $$ (nest 1 $ text "then" <+> exp1)
-  $$ (nest 1 $ text "else" <+> exp2)
+   = RepaExp $ text "if" <+> parens cond
+  $$ (nest 1 $ text "then" <+> parens exp1)
+  $$ (nest 1 $ text "else" <+> parens exp2)
    where
       cond = toDoc $ evalOpenExp c lamL letL
       exp1 = toDoc $ evalOpenExp t lamL letL
