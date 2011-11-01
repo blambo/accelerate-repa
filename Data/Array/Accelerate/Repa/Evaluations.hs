@@ -630,7 +630,10 @@ evalOpenExp (PrimApp p arg) lamL letL
       argS = evalOpenExp arg lamL letL
 
 evalOpenExp (IndexScalar acc ix) lamL letL
-   = RepaExp $ parens arr <+> char '!' <+> parens idx
+   = RepaExp $ parens arr <+> char '!'
+          <+> case render idx of
+               "Z"       -> idx
+               otherwise -> parens (text "Z:." <> idx)
    where
       RepaAcc arr = evalOpenAcc acc letL
       RepaExp idx = evalOpenExp ix lamL letL
