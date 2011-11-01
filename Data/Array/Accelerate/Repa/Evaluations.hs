@@ -197,8 +197,8 @@ evalPreOpenAcc (ZipWith f acc1 acc2) letLevel
 
    returnDoc       = text "Repa.zipWith"
                  <+> (parens fun
-                  $$ parens arr1
-                  $$ parens arr2)
+                  $$ parens arr2
+                  $$ parens arr1)
 
 
 evalPreOpenAcc (Fold f e acc) letLevel
