@@ -3,4 +3,4 @@ import Data.Array.Accelerate.Repa as Repa
 
 main :: IO ()
 main = do
-   print $ Repa.run $ Acc.map (\x -> x) $ use $ fromList Z [3::Int]
+   putStrLn $ Repa.run $ Acc.map (\x -> x) $ use $ fromList Z [3::Int]

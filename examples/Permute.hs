@@ -5,7 +5,7 @@ import Data.Array.Accelerate.Interpreter as Interpreter
 
 main :: IO ()
 main = do
-   putStrLn $ show $ Interpreter.run $
+   putStrLn $ Repa.run $
       permute comb dftArr perm srcArr
 
 -- comb :: Int -> Int -> Int
