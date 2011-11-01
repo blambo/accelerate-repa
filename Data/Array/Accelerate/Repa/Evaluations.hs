@@ -542,7 +542,7 @@ evalFun f letL = evalOpenFun f 0 letL
 
 evalOpenFun :: OpenFun env aenv t -> Int -> Int -> RepaAcc
 evalOpenFun (Body e) lamL letL
- = RepaAcc $ parens (toDoc $ evalOpenExp e lamL letL) <+> colon <> colon <+> (expToString e)
+ = RepaAcc $ parens (toDoc $ evalOpenExp e lamL letL) -- <+> colon <> colon <+> (expToString e)
 evalOpenFun (Lam f)  lamL letL
  = RepaAcc (text "\\" <> varName <+> text "->" <+> funS)
  where
@@ -558,7 +558,8 @@ evalOpenExp :: forall a env aenv .
                OpenExp env aenv a -> Int -> Int -> RepaExp
 
 evalOpenExp var@(Var idx) lamL letL
-   = RepaExp $ parens (char 'x' <> int varNum <+> colon <> colon <+> typeD)
+--   = RepaExp $ parens (char 'x' <> int varNum <+> colon <> colon <+> typeD)
+   = RepaExp $ parens (char 'x' <> int varNum)
    where
       varNum = lamL - (getVarNum idx) - 1
       typeD  = expToString (var)
