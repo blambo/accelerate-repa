@@ -541,16 +541,16 @@ evalPreOpenAcc _ _ = RepaAcc $ text "<UNDEFINED>"
 --------------------
 
 evalFun :: Fun aenv t -> Int -> RepaAcc
-evalFun f letL = evalOpenFun f 0 letL
+evalFun f letL = evalOpenFun f 0 letL empty
 
-evalOpenFun :: OpenFun env aenv t -> Int -> Int -> RepaAcc
-evalOpenFun (Body e) lamL letL
- = RepaAcc $ parens (toDoc $ evalOpenExp e lamL letL) -- <+> colon <> colon <+> (expToString e)
-evalOpenFun (Lam f)  lamL letL
- = RepaAcc (text "\\" <> varName <+> text "->" <+> funS)
+evalOpenFun :: OpenFun env aenv t -> Int -> Int -> Doc -> RepaAcc
+evalOpenFun (Body e) lamL letL binds
+ = RepaAcc $ binds <+> parens (toDoc $ evalOpenExp e lamL letL)
+evalOpenFun (Lam f)  lamL letL binds
+ = funD
  where
-   RepaAcc funS = evalOpenFun f (lamL+1) letL
-   varName = text "x" <> int lamL
+   funD    = evalOpenFun f (lamL+1) letL (varBind <+> binds)
+   varBind = text "\\x" <> int lamL <+> text "->"
 
 ----------------------
 -- EXPRESSION NODES --
