@@ -87,7 +87,6 @@ evalPreOpenAcc (Avar idx) letLevel
    var    = char 'y' <> int (letLevel - varNum - 1)
    varNum = getVarNum idx
 
--- TODO: Possibly not currently correct
 evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -95,10 +94,14 @@ evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel
    RepaAcc arr = evalOpenAcc acc    letLevel
 
    var         = char 'y' <> int 0
-   returnDoc   = text "let" <+> var
-             <+> equals <+> parens arr
+   tempVar     = char 'y'
+   returnDoc   = text "let" <+> tempVar
+             <+> equals <+> parens arr <+> text "-- binding of Apply block"
               $$ text "in"
-              $$ nest 1 fun
+              $$ nest 1 (text "let" <+> var
+                <+> equals <+> tempVar
+                 $$ text "in"
+                    $$ nest 1 fun)
 
 
 evalPreOpenAcc (Apply _afun _acc) _letLevel
