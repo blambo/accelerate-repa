@@ -96,7 +96,7 @@ evalPreOpenAcc (Apply (Alam (Abody funAcc)) acc) letLevel
    var         = char 'y' <> int 0
    tempVar     = char 'y'
    returnDoc   = text "let" <+> tempVar
-             <+> equals <+> parens arr <+> text "-- binding of Apply block"
+             <+> equals <+> parens arr
               $$ text "in"
               $$ nest 1 (text "let" <+> var
                 <+> equals <+> tempVar
