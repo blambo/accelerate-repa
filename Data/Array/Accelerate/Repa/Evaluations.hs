@@ -719,11 +719,11 @@ prjVarName = text "tVar"
 
 -- Creates a Doc for the given expression
 expToString :: OpenExp env aenv a -> Doc
-expToString exp = parens $ tupleTypeToString $ expType exp
+expToString exp = {-parens $-} tupleTypeToString $ expType exp
 
 tupleTypeToString :: TupleType a -> Doc
 tupleTypeToString UnitTuple = empty
-tupleTypeToString (PairTuple a b) =  tupleType'ToString $ parseTupleType (PairTuple a b)
+tupleTypeToString (PairTuple a b) = parens $ tupleType'ToString $ parseTupleType (PairTuple a b)
 tupleTypeToString (SingleTuple a) = text $ show a
 
 tupleType'ToString :: TupleType' a -> Doc
