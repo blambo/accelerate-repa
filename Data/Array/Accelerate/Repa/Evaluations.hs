@@ -463,12 +463,12 @@ evalPreOpenAcc (Permute f dftAcc p acc) letLevel
            $$ text "| otherwise =" <+> permuteArgsDoc)
 
    permuteArgsDoc =
-      text "let" <+> (text "srcIdx = fromIndex (extent srcArr) idx"
+      text "let" <+> (text "(Z:.srcIdx) = fromIndex (extent srcArr) idx"
           $$ text "newArr = fromFunction"
           <+> (text "(extent dftArr)"
             $$ text "(\\sh -> case sh == (perm srcIdx) of"
             $$ nest 1 (text "True  -> (dftArr ! (perm srcIdx)) `comb`"
-                            <+> text "(srcArr ! srcIdx)"
+                            <+> text "(srcArr ! (Z:.srcIdx))"
                     $$ text "False -> index dftArr sh)")))
       $$ text "in permute (idx+1) comb newArr perm srcArr"
 
