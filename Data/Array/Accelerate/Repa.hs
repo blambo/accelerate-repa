@@ -38,6 +38,7 @@ headS :: Doc
 headS =
    text "{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, TypeOperators #-}" $+$
    text "{-# LANGUAGE FlexibleContexts #-}" $+$
+   text "module Acc-Repa where" $+$
    text "import Data.Array.Repa as Repa" $+$
    text "import Data.Bits -- required for Prim ops" $+$
    text "import Data.Char -- required for Prim ops" $+$
