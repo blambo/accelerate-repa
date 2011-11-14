@@ -18,7 +18,9 @@ Library
    Build-depends: repa == 2.*,
                   accelerate == 0.9.*,
                   base,
-                  pretty == 1.1.*
+                  pretty == 1.1.*,
+                  ghc-paths == 0.1.*,
+                  ghc == 7.2.*
 
    Exposed-modules: Data.Array.Accelerate.Repa
    Other-modules:   Data.Array.Accelerate.Repa.Evaluations
