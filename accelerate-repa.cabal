@@ -20,7 +20,8 @@ Library
                   base,
                   pretty == 1.1.*,
                   ghc-paths == 0.1.*,
-                  ghc == 7.2.*
+                  ghc == 7.2.*,
+                  directory == 1.1.*
 
    Exposed-modules: Data.Array.Accelerate.Repa
    Other-modules:   Data.Array.Accelerate.Repa.Evaluations
