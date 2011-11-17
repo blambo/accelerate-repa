@@ -32,6 +32,7 @@ import DynFlags
 
 import Unsafe.Coerce
 import System.IO
+import System.IO.Unsafe
 import System.Directory (removeFile)
 
 -- | Using the provided Accelerate program, run will compile, execute
@@ -39,8 +40,8 @@ import System.Directory (removeFile)
 -- execution
 run :: (Arrays a, Repa.Shape sh, Repa.Elt e)
     => Smart.Acc a -- ^ The Accelerate program
-    -> IO (Repa.Array sh e)
-run acc = do
+    -> Repa.Array sh e
+run acc = unsafePerformIO $ do
    -- Generate source code from Accelerate program
    let src = accToRepa acc
    -- Write source code to temporary file in /tmp

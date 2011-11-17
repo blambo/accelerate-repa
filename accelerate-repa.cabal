@@ -1,5 +1,5 @@
 Name:             accelerate-repa
-Version:          0.2
+Version:          0.2.0.1
 Cabal-version:    >= 1.6
 Tested-with:      GHC == 7.2.1
 Build-type:       Simple
