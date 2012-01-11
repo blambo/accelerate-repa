@@ -120,7 +120,7 @@ evalPreOpenAcc (Acond cond acc1 acc2) letLevel
                $$ text "else" $$ (nest 1 arr2)
 
 
-
+-- TODO: change 'fromList' to 'fromListUnboxed'
 evalPreOpenAcc (Use arr@(Array sh e)) letLevel
  = RepaAcc returnDoc
  where
@@ -134,6 +134,7 @@ evalPreOpenAcc (Use arr@(Array sh e)) letLevel
            <+> parens (arrData <+> colon <> colon <+> listType)
 
 
+-- TODO: change 'fromList' to 'fromListUnboxed'
 evalPreOpenAcc (Unit e) letLevel
  = RepaAcc returnDoc
  where
@@ -149,7 +150,6 @@ evalPreOpenAcc (Reshape e acc) letLevel
 
    returnDoc   = text "reshape" <+> parens exp <+> parens arr
 
-
 evalPreOpenAcc (Generate sh f) letLevel
  = RepaAcc returnDoc
  where
@@ -160,7 +160,7 @@ evalPreOpenAcc (Generate sh f) letLevel
              <+> parens exp
              <+> parens fun
 
-
+-- Not sure why sliceIndex is not required?
 evalPreOpenAcc (Replicate sliceIndex slix acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -169,6 +169,7 @@ evalPreOpenAcc (Replicate sliceIndex slix acc) letLevel
 
    returnDoc    = text "extend" <+> parens slixD <+> parens arrD
 
+-- Not sure why sliceIndex is not required?
 evalPreOpenAcc (Index sliceIndex acc slix) letLevel
  = RepaAcc $ returnDoc
  where
@@ -187,7 +188,8 @@ evalPreOpenAcc (Map f acc) letLevel
              <+> (parens fun
               $$ parens arr)
 
-
+-- Reversing order of acc1 and acc2 seems to fix some issues, will need to
+-- test more extensively with differing typed arrays to insure no errors
 evalPreOpenAcc (ZipWith f acc1 acc2) letLevel
  = RepaAcc returnDoc
  where
@@ -200,7 +202,8 @@ evalPreOpenAcc (ZipWith f acc1 acc2) letLevel
                   $$ parens arr2
                   $$ parens arr1)
 
-
+-- TODO: Specialise to parallel fold 'foldP' as Repa's restrictions for this
+-- fold is same as Accelerate's
 evalPreOpenAcc (Fold f e acc) letLevel
  = RepaAcc returnDoc
  where
@@ -213,7 +216,7 @@ evalPreOpenAcc (Fold f e acc) letLevel
                  $$ parens exp
                  $$ parens arr)
 
-
+-- TODO: No foldr1 function in Repa 3, change to foldP?
 evalPreOpenAcc (Fold1 f acc) letLevel
  = RepaAcc $ returnDoc
  where
@@ -235,7 +238,7 @@ evalPreOpenAcc (Fold1 f acc) letLevel
                    $$ newShapeD
                    $$ genElemD)
 
-
+-- TODO: Tidy generated code
 evalPreOpenAcc (FoldSeg f e acc1 acc2) letLevel
  = RepaAcc $ returnDoc
  where
@@ -266,14 +269,15 @@ evalPreOpenAcc (FoldSeg f e acc1 acc2) letLevel
                      $$ text "in newVal"))
             $$ text "in"
             $$ nest 1 (text "traverse res (\\(Z:.i) -> (Z:.(i-1))) (\\orig (Z:.pos) -> orig (Z:.pos))"))
-         $$ text "foldOne lookup (sh:.ix) ="
+          $$ text "foldOne lookup (sh:.ix) ="
             <+> (text "let" <+> (text "start = starts ! (Z:.ix)"
                               $$ text "len   = seg    ! (Z:.ix)")
              $$ text "in foldSeg' sh e start (start+len)")
-         $$ text "foldSeg' sh val start end"
-         $$ nest 1 (text "| start >= end = val"
+          $$ text "foldSeg' sh val start end"
+          $$ nest 1 (text "| start >= end = val"
                  $$ text "| otherwise    = foldSeg' sh (f val (arr ! (sh:.start))) (start+1) end")
 
+-- TODO: Tidy up code
 evalPreOpenAcc (Fold1Seg f acc1 acc2) letLevel
  = RepaAcc $ returnDoc
  where
@@ -310,8 +314,6 @@ evalPreOpenAcc (Fold1Seg f acc1 acc2) letLevel
          $$ nest 1 (text "| start >= end = val"
                  $$ text "| otherwise    = foldSeg' sh (f val (arr ! (sh:.start))) (start+1) end")
 
--- Current generated code will be grossly inefficient, will need to generate more
--- efficient code later, but currently working
 evalPreOpenAcc (Scanl f e acc) letLevel
  = RepaAcc returnDoc
  where
@@ -644,7 +646,7 @@ evalOpenExp (Shape acc) lamL letL
       RepaAcc arr = evalOpenAcc acc letL
 
 evalOpenExp (Size acc) _lamL letL
-   = RepaExp $ text "Repa.size" <+> parens arr
+   = RepaExp $ text "Repa.size $ Repa.extent" <+> parens arr
    where
       RepaAcc arr = evalOpenAcc acc letL
 

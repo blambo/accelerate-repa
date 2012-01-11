@@ -37,6 +37,9 @@ import System.Directory (removeFile)
 -- | Using the provided Accelerate program, run will compile, execute
 -- and return the result of a given Accelerate program using Repa for
 -- execution
+--
+-- TODO: Remove Repa.Elt type class
+-- TODO: Update return type for new Array type
 run :: (Arrays a, Repa.Shape sh, Repa.Elt e)
     => Smart.Acc a -- ^ The Accelerate program
     -> IO (Repa.Array sh e)
@@ -82,6 +85,9 @@ compile path = do
 
 -- | Executes the given function in the given module, must already be
 -- compiled and loaded
+--
+-- TODO: Change return type for new version of Repa.Array
+-- TODO: Remove Repa.Elt type class reference
 exec :: (Repa.Shape sh, Repa.Elt e)
      => String -- ^ The module name
      -> String -- ^ The function name
@@ -96,6 +102,8 @@ exec modName fnName = do
 
 -- | Converts an Accelerate program to a Repa program and returns the
 -- source as a String
+-- 
+-- TODO: Add module for 'Arrays' reference to make reading easier
 accToRepa :: (Arrays a)
           => Smart.Acc a -- ^ The Accelerate program
           -> String
