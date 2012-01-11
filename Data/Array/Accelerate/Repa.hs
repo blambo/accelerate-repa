@@ -34,15 +34,13 @@ import Unsafe.Coerce
 import System.IO
 import System.Directory (removeFile)
 
--- | Using the provided Accelerate program, run will compile, execute
--- and return the result of a given Accelerate program using Repa for
--- execution
+-- | Using the Accelerate program given as an argument, run will compile,
+-- execute and return the result of a given Accelerate program using Repa
+-- for execution
 --
--- TODO: Remove Repa.Elt type class
--- TODO: Update return type for new Array type
-run :: (Arrays a, Repa.Shape sh, Repa.Elt e)
+run :: (Smart.Arrays a, Repa.Shape sh, Repa.Repr r e)
     => Smart.Acc a -- ^ The Accelerate program
-    -> IO (Repa.Array sh e)
+    -> IO (Repa.Array r sh e)
 run acc = do
    -- Generate source code from Accelerate program
    let src = accToRepa acc
@@ -86,12 +84,10 @@ compile path = do
 -- | Executes the given function in the given module, must already be
 -- compiled and loaded
 --
--- TODO: Change return type for new version of Repa.Array
--- TODO: Remove Repa.Elt type class reference
-exec :: (Repa.Shape sh, Repa.Elt e)
+exec :: (Repa.Shape sh, Repa.Repr r e)
      => String -- ^ The module name
      -> String -- ^ The function name
-     -> Ghc (Repa.Array sh e)
+     -> Ghc (Repa.Array r sh e)
 exec modName fnName = do
    mod <- findModule (mkModuleName modName) Nothing
    setContext [mod] []
@@ -103,8 +99,7 @@ exec modName fnName = do
 -- | Converts an Accelerate program to a Repa program and returns the
 -- source as a String
 -- 
--- TODO: Add module for 'Arrays' reference to make reading easier
-accToRepa :: (Arrays a)
+accToRepa :: (Smart.Arrays a)
           => Smart.Acc a -- ^ The Accelerate program
           -> String
 accToRepa acc = show $

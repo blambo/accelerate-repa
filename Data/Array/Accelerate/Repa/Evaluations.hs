@@ -120,7 +120,6 @@ evalPreOpenAcc (Acond cond acc1 acc2) letLevel
                $$ text "else" $$ (nest 1 arr2)
 
 
--- TODO: change 'fromList' to 'fromListUnboxed'
 evalPreOpenAcc (Use arr@(Array sh e)) letLevel
  = RepaAcc returnDoc
  where
@@ -129,17 +128,16 @@ evalPreOpenAcc (Use arr@(Array sh e)) letLevel
    arrData   = text $ show $ arrL
    listType  = text $ (showsTypeRep $ typeOf $ arrL) ""
 
-   returnDoc = text "fromList"
+   returnDoc = text "fromListUnboxed"
            <+> parens shS
            <+> parens (arrData <+> colon <> colon <+> listType)
 
 
--- TODO: change 'fromList' to 'fromListUnboxed'
 evalPreOpenAcc (Unit e) letLevel
  = RepaAcc returnDoc
  where
    exp       = toDoc $ evalExp e letLevel
-   returnDoc = text "fromList Z" <+> brackets exp
+   returnDoc = text "fromListUnboxed Z" <+> brackets exp
 
 
 evalPreOpenAcc (Reshape e acc) letLevel
