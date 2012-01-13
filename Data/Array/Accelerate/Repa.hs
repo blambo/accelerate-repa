@@ -38,7 +38,7 @@ import System.Directory (removeFile)
 -- execute and return the result of a given Accelerate program using Repa
 -- for execution
 --
-run :: (Smart.Arrays a, Repa.Shape sh, Repa.Repr r e)
+run :: (Arrays a, Repa.Shape sh, Repa.Repr r e)
     => Smart.Acc a -- ^ The Accelerate program
     -> IO (Repa.Array r sh e)
 run acc = do
@@ -93,13 +93,13 @@ exec modName fnName = do
    setContext [mod] []
    value <- compileExpr (modName Prelude.++ "." Prelude.++ fnName)
 
-   let value' = (unsafeCoerce value) :: Repa.Array sh e
+   let value' = (unsafeCoerce value) :: Repa.Array r sh e
    return value'
 
 -- | Converts an Accelerate program to a Repa program and returns the
 -- source as a String
 -- 
-accToRepa :: (Smart.Arrays a)
+accToRepa :: (Arrays a)
           => Smart.Acc a -- ^ The Accelerate program
           -> String
 accToRepa acc = show $
