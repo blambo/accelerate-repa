@@ -32,16 +32,16 @@ import DynFlags
 
 import Unsafe.Coerce
 import System.IO
-import System.IO.Unsafe
 import System.Directory (removeFile)
 
--- | Using the provided Accelerate program, run will compile, execute
--- and return the result of a given Accelerate program using Repa for
--- execution
-run :: (Arrays a, Repa.Shape sh, Repa.Elt e)
+-- | Using the Accelerate program given as an argument, run will compile,
+-- execute and return the result of a given Accelerate program using Repa
+-- for execution
+--
+run :: (Arrays a, Repa.Shape sh, Repa.Repr r e)
     => Smart.Acc a -- ^ The Accelerate program
-    -> Repa.Array sh e
-run acc = unsafePerformIO $ do
+    -> IO (Repa.Array r sh e)
+run acc = do
    -- Generate source code from Accelerate program
    let src = accToRepa acc
    -- Write source code to temporary file in /tmp
@@ -83,20 +83,22 @@ compile path = do
 
 -- | Executes the given function in the given module, must already be
 -- compiled and loaded
-exec :: (Repa.Shape sh, Repa.Elt e)
+--
+exec :: (Repa.Shape sh, Repa.Repr r e)
      => String -- ^ The module name
      -> String -- ^ The function name
-     -> Ghc (Repa.Array sh e)
+     -> Ghc (Repa.Array r sh e)
 exec modName fnName = do
    mod <- findModule (mkModuleName modName) Nothing
    setContext [mod] []
    value <- compileExpr (modName Prelude.++ "." Prelude.++ fnName)
 
-   let value' = (unsafeCoerce value) :: Repa.Array sh e
+   let value' = (unsafeCoerce value) :: Repa.Array r sh e
    return value'
 
 -- | Converts an Accelerate program to a Repa program and returns the
 -- source as a String
+-- 
 accToRepa :: (Arrays a)
           => Smart.Acc a -- ^ The Accelerate program
           -> String

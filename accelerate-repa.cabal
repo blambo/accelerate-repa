@@ -15,7 +15,7 @@ Category:         Compilers/Interpreters, Concurrency, Data
 Stability:        Experimental
 
 Library
-   Build-depends: repa == 2.*,
+   Build-depends: repa == 3.*,
                   accelerate == 0.9.*,
                   base,
                   pretty == 1.1.*,
